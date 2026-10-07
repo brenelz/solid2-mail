@@ -1,5 +1,5 @@
 import { For, Show } from "solid-js";
-import type { ThreadListItem } from "../lib/data";
+import type { ThreadListItem } from "../lib/types";
 import {
   ArchiveIcon,
   CheckIcon,

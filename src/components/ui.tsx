@@ -1,5 +1,5 @@
 import type { JSX } from "@solidjs/web";
-import type { Label } from "../lib/data";
+import type { Label } from "../lib/types";
 
 const avatarSizes = {
   lg: "size-10 text-sm",

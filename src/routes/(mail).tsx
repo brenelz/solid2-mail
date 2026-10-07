@@ -1,4 +1,5 @@
 import type { ParentProps } from "solid-js";
+import { DemoToolbar } from "../components/demo-toolbar";
 import { MailSidebar } from "../components/mail-sidebar";
 import { MailTopBar } from "../components/mail-top-bar";
 import { PenLineIcon } from "../components/icons";
@@ -15,6 +16,7 @@ export default function MailLayout(props: ParentProps) {
           </main>
         </div>
       </div>
+      <DemoToolbar />
       {/* Floating compose button on small screens */}
       <button
         class="bg-accent shadow-accent/30 fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex h-14 items-center gap-2 rounded-2xl pr-5 pl-4 text-sm font-semibold text-white shadow-xl transition-transform active:scale-95 md:hidden"

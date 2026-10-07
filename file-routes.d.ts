@@ -41,34 +41,42 @@ declare module "virtual:file-routes" {
       $$route?: undefined;
     },
     {
-      path: "/(mail)/inbox/:threadId";
+      path: "/*404";
       page: true;
-      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/inbox/[threadId]")>;
-      $$route?: undefined;
+      $component: FileRouteLazyRef<typeof import("./src/routes/[...404]")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/[...404]")>;
+    },
+    {
+      path: "/";
+      page: true;
+      $component: FileRouteLazyRef<typeof import("./src/routes/index")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/index")>;
     },
     {
       path: "/(mail)/inbox/";
       page: true;
       $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/inbox/index")>;
-      $$route?: undefined;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/inbox/index")>;
     },
     {
-      path: "/(mail)/";
+      path: "/(mail)/inbox/:threadId";
       page: true;
-      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/index")>;
-      $$route?: undefined;
-    },
-    {
-      path: "/*404";
-      page: true;
-      $component: FileRouteLazyRef<typeof import("./src/routes/[...404]")>;
-      $$route: FileRouteEagerRef<typeof import("./src/routes/[...404]")>;
+      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/inbox/[threadId]")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/inbox/[threadId]")>;
     }
   ];
   export default routes;
 
   /** The page entries, nested by path with grouping segments stripped. */
   export const pageRoutes: readonly [
+    {
+      path: "/";
+      id: "/";
+      page: true;
+      $component: FileRouteLazyRef<typeof import("./src/routes/index")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/index")>;
+      children?: undefined;
+    },
     {
       path: "/*404";
       id: "/*404";
@@ -85,19 +93,11 @@ declare module "virtual:file-routes" {
       $$route?: undefined;
       children: readonly [
         {
-          path: "/";
-          id: "/";
-          page: true;
-          $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/index")>;
-          $$route?: undefined;
-          children?: undefined;
-        },
-        {
           path: "/inbox/";
           id: "/inbox/";
           page: true;
           $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/inbox/index")>;
-          $$route?: undefined;
+          $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/inbox/index")>;
           children?: undefined;
         },
         {
@@ -105,7 +105,7 @@ declare module "virtual:file-routes" {
           id: "/inbox/:threadId";
           page: true;
           $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/inbox/[threadId]")>;
-          $$route?: undefined;
+          $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/inbox/[threadId]")>;
           children?: undefined;
         }
       ];

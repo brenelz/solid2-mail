@@ -1,8 +1,6 @@
 export type Label = { id: string; name: string; color: string };
 
-export type Mailbox = "inbox" | "starred" | "sent" | "archive";
-
-export type MailboxSummary = { id: Mailbox; name: string; count: number };
+export type { Mailbox, MailboxCounts } from "./mailboxes";
 
 export type User = { name: string; title: string; email: string };
 

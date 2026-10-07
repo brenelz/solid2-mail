@@ -1,6 +1,6 @@
 import { createMemo, For, Loading, Show } from "solid-js";
-import { getCurrentUser, getLabels, getMailboxes } from "../lib/queries";
-import type { Mailbox } from "../lib/types";
+import { MAILBOXES, type Mailbox } from "../lib/mailboxes";
+import { getCurrentUser, getLabels, getMailboxCounts } from "../lib/queries";
 import {
   ArchiveIcon,
   ChevronsUpDownIcon,
@@ -9,11 +9,7 @@ import {
   SendIcon,
   StarIcon,
 } from "./icons";
-import {
-  CurrentUserCardSkeleton,
-  LabelNavSkeleton,
-  MailboxNavSkeleton,
-} from "./skeletons";
+import { CurrentUserCardSkeleton, LabelNavSkeleton } from "./skeletons";
 import { UserAvatar } from "./ui";
 
 const mailboxIcons: Record<Mailbox, typeof InboxIcon> = {
@@ -30,7 +26,7 @@ const linkClass =
 const ACTIVE: Mailbox = "inbox";
 
 export function MailSidebar() {
-  const mailboxes = createMemo(() => getMailboxes(), { name: "mailboxes" });
+  const mailboxCounts = createMemo(() => getMailboxCounts(), { name: "mailboxCounts" });
   const labels = createMemo(() => getLabels(), { name: "labels" });
   const currentUser = createMemo(() => getCurrentUser(), {
     name: "currentUser",
@@ -49,28 +45,29 @@ export function MailSidebar() {
         </div>
 
         <nav aria-label="Mailboxes" class="flex flex-col gap-0.5">
-          <Loading fallback={<MailboxNavSkeleton />}>
-            <For each={mailboxes()}>
-              {(mailbox) => {
-                const Icon = mailboxIcons[mailbox.id];
-                return (
-                  <a
-                    aria-current={mailbox.id === ACTIVE ? "page" : undefined}
-                    class={linkClass}
-                    href={`/${mailbox.id}`}
-                  >
-                    <Icon class="size-5 shrink-0" />
-                    <span class="flex-1">{mailbox.name}</span>
-                    <Show when={mailbox.count > 0}>
+          <For each={MAILBOXES}>
+            {(mailbox) => {
+              const Icon = mailboxIcons[mailbox.id];
+              return (
+                <a
+                  aria-current={mailbox.id === ACTIVE ? "page" : undefined}
+                  class={linkClass}
+                  href={`/${mailbox.id}`}
+                >
+                  <Icon class="size-5 shrink-0" />
+                  <span class="flex-1">{mailbox.name}</span>
+                  {/* Only the count waits on the server; while it loads the row renders without it. */}
+                  <Loading>
+                    <Show when={mailboxCounts()[mailbox.id] > 0}>
                       <span class="text-gray group-aria-[current=page]:text-accent text-xs font-medium tabular-nums">
-                        {mailbox.count}
+                        {mailboxCounts()[mailbox.id]}
                       </span>
                     </Show>
-                  </a>
-                );
-              }}
-            </For>
-          </Loading>
+                  </Loading>
+                </a>
+              );
+            }}
+          </For>
         </nav>
 
         <nav aria-label="Labels" class="flex flex-col gap-0.5">

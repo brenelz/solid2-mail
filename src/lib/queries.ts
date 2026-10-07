@@ -1,6 +1,6 @@
 import { query } from "@solidjs/router";
-import { currentUser, delay, isDelaysEnabled, labels, mailboxes, threadDetails, threads } from "./server";
-import type { Label, Mailbox, MailboxSummary, Thread, ThreadListItem, User } from "./types";
+import { currentUser, delay, isDelaysEnabled, labels, threadDetails, threads } from "./server";
+import type { Label, Mailbox, MailboxCounts, Thread, ThreadListItem, User } from "./types";
 
 // Cached router queries. Each body is a server function: on the client it compiles to an RPC stub,
 // so ./server (server-only) never reaches the browser.
@@ -11,11 +11,18 @@ export const getLabels = query(async (): Promise<Label[]> => {
   return labels;
 }, "labels");
 
-export const getMailboxes = query(async (): Promise<MailboxSummary[]> => {
+/** Unread conversations per mailbox. */
+export const getMailboxCounts = query(async (): Promise<MailboxCounts> => {
   "use server";
   await delay();
-  return mailboxes;
-}, "mailboxes");
+  const unread = threads.filter((t) => !t.read);
+  return {
+    inbox: unread.length,
+    starred: unread.filter((t) => t.starred).length,
+    sent: 0,
+    archive: 0,
+  };
+}, "mailboxCounts");
 
 export const getCurrentUser = query(async (): Promise<User> => {
   "use server";

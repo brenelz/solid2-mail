@@ -1,6 +1,6 @@
 import "server-only";
 import { getRequestEvent, parseCookieHeader } from "@solidjs/web";
-import type { Label, MailboxSummary, Thread, ThreadListItem, User } from "./types";
+import type { Label, Thread, ThreadListItem, User } from "./types";
 
 // Server-only data layer. Static placeholder content for now — swap for a real database later.
 
@@ -28,13 +28,6 @@ export const labels: Label[] = [
 ];
 
 const label = (id: string) => labels.find((l) => l.id === id)!;
-
-export const mailboxes: MailboxSummary[] = [
-  { id: "inbox", name: "Inbox", count: 1 },
-  { id: "starred", name: "Starred", count: 0 },
-  { id: "sent", name: "Sent", count: 0 },
-  { id: "archive", name: "Archive", count: 0 },
-];
 
 export const currentUser: User = {
   name: "Mara Lindqvist",

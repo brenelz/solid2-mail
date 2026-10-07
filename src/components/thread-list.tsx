@@ -1,7 +1,8 @@
 import { For, Show } from "solid-js";
-import type { ThreadListItem } from "../lib/types";
+import type { Mailbox, ThreadListItem } from "../lib/types";
 import {
   ArchiveIcon,
+  BrandMark,
   CheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -15,7 +16,8 @@ import { LabelChip, RowButton, UserAvatar } from "./ui";
 const pagerLinkClass =
   "text-gray inline-flex size-6 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white";
 
-export function ThreadListHeader(props: { title: string; count: number; total: number }) {
+/** Without `count` the pager is hidden — e.g. search before anything is typed. */
+export function ThreadListHeader(props: { title: string; count?: number; total?: number }) {
   return (
     <div class="border-divider/70 flex h-12 shrink-0 items-center justify-between gap-3 border-b bg-black px-4 sm:px-5">
       <div class="flex min-w-0 items-center gap-3">
@@ -30,9 +32,10 @@ export function ThreadListHeader(props: { title: string; count: number; total: n
         </button>
         <h2 class="truncate text-sm font-semibold tracking-tight">{props.title}</h2>
       </div>
+      <Show when={props.count !== undefined}>
       <div class="flex shrink-0 items-center gap-1">
         <span class="text-gray mr-1 text-xs tabular-nums">
-          1–{props.count} of {props.total}
+          {props.count ? `1–${props.count}` : 0} of {props.total}
         </span>
         <span aria-disabled="true" class={`${pagerLinkClass} cursor-default opacity-40 hover:bg-transparent`}>
           <ChevronLeftIcon class="size-4" />
@@ -41,15 +44,42 @@ export function ThreadListHeader(props: { title: string; count: number; total: n
           <ChevronRightIcon class="size-4" />
         </span>
       </div>
+      </Show>
     </div>
   );
 }
 
-export function ThreadList(props: { threads: ThreadListItem[]; mailbox: string }) {
+export const mailboxEmptyCopy: Record<Mailbox, { title: string; body: string }> = {
+  inbox: { title: "Inbox zero", body: "New conversations show up here as they arrive." },
+  starred: { title: "No starred conversations", body: "Star a conversation to keep it close." },
+  sent: { title: "Nothing sent yet", body: "Replies and new messages you write show up here." },
+  archive: { title: "Nothing archived", body: "Archived conversations land here and stay searchable." },
+};
+
+export function ThreadList(props: {
+  threads: ThreadListItem[];
+  /** Where a row links — the thread inside this list's own route (mailbox or search). */
+  hrefFor: (threadId: string) => string;
+  empty: { title: string; body?: string };
+}) {
   return (
-    <ul aria-label="Conversations" class="flex flex-col">
-      <For each={props.threads}>{(thread) => <ThreadRow href={`/${props.mailbox}/${thread.id}`} thread={thread} />}</For>
-    </ul>
+    <Show when={props.threads.length > 0} fallback={<EmptyState body={props.empty.body} title={props.empty.title} />}>
+      <ul aria-label="Conversations" class="flex flex-col">
+        <For each={props.threads}>{(thread) => <ThreadRow href={props.hrefFor(thread.id)} thread={thread} />}</For>
+      </ul>
+    </Show>
+  );
+}
+
+export function EmptyState(props: { title: string; body?: string }) {
+  return (
+    <div class="border-divider m-3 flex flex-col items-center gap-3 rounded-lg border border-dashed px-5 py-16 text-center">
+      <BrandMark class="text-divider size-8" />
+      <p class="text-sm font-medium text-white">{props.title}</p>
+      <Show when={props.body}>
+        <p class="text-muted max-w-xs text-sm">{props.body}</p>
+      </Show>
+    </div>
   );
 }
 

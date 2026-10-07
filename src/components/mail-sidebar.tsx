@@ -1,6 +1,7 @@
 import { createMemo, For, Loading, Show } from "solid-js";
 import { MAILBOXES, type Mailbox } from "../lib/mailboxes";
 import { getCurrentUser, getLabels, getMailboxCounts } from "../lib/queries";
+import { searchHref } from "../lib/search";
 import {
   ArchiveIcon,
   ChevronsUpDownIcon,
@@ -19,11 +20,9 @@ const mailboxIcons: Record<Mailbox, typeof InboxIcon> = {
   starred: StarIcon,
 };
 
+// The router marks plain anchors: `data-active` when the URL is this mailbox or a thread inside it.
 const linkClass =
-  "group flex h-10 items-center gap-3 rounded-lg px-3 text-base tracking-tight transition-colors not-aria-[current=page]:hover:bg-card aria-[current=page]:bg-accent/15 aria-[current=page]:text-accent aria-[current=page]:font-bold aria-[current=page]:[&_svg]:stroke-[2.5]";
-
-// Hardcoded until routing state is wired up.
-const ACTIVE: Mailbox = "inbox";
+  "group flex h-10 items-center gap-3 rounded-lg px-3 text-base tracking-tight transition-colors not-data-active:hover:bg-card data-active:bg-accent/15 data-active:text-accent data-active:font-bold data-active:[&_svg]:stroke-[2.5]";
 
 export function MailSidebar() {
   const mailboxCounts = createMemo(() => getMailboxCounts(), { name: "mailboxCounts" });
@@ -50,16 +49,22 @@ export function MailSidebar() {
               const Icon = mailboxIcons[mailbox.id];
               return (
                 <a
-                  aria-current={mailbox.id === ACTIVE ? "page" : undefined}
                   class={linkClass}
                   href={`/${mailbox.id}`}
                 >
                   <Icon class="size-5 shrink-0" />
                   <span class="flex-1">{mailbox.name}</span>
+                  {/* While this mailbox is the in-flight navigation target the router sets `data-pending`:
+                      show a "…" in place of the count until the page is ready. */}
+                  <span aria-hidden="true" class="text-gray hidden items-center gap-0.5 group-data-pending:flex">
+                    <span class="size-1 animate-pulse rounded-full bg-current" />
+                    <span class="size-1 animate-pulse rounded-full bg-current [animation-delay:150ms]" />
+                    <span class="size-1 animate-pulse rounded-full bg-current [animation-delay:300ms]" />
+                  </span>
                   {/* Only the count waits on the server; while it loads the row renders without it. */}
                   <Loading>
                     <Show when={mailboxCounts()[mailbox.id] > 0}>
-                      <span class="text-gray group-aria-[current=page]:text-accent text-xs font-medium tabular-nums">
+                      <span class="text-gray group-data-active:text-accent text-xs font-medium tabular-nums group-data-pending:hidden">
                         {mailboxCounts()[mailbox.id]}
                       </span>
                     </Show>
@@ -79,7 +84,7 @@ export function MailSidebar() {
               {(label) => (
                 <a
                   class="hover:bg-card flex h-9 items-center gap-3 rounded-lg px-3 text-sm tracking-tight transition-colors"
-                  href={`/search?q=${encodeURIComponent(label.name)}`}
+                  href={searchHref(label.name)}
                 >
                   <span
                     aria-hidden="true"

@@ -53,16 +53,28 @@ declare module "virtual:file-routes" {
       $$route: FileRouteEagerRef<typeof import("./src/routes/index")>;
     },
     {
-      path: "/(mail)/inbox/";
+      path: "/(mail)/:mailbox/:threadId";
       page: true;
-      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/inbox/index")>;
-      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/inbox/index")>;
+      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/[mailbox]/[threadId]")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/[mailbox]/[threadId]")>;
     },
     {
-      path: "/(mail)/inbox/:threadId";
+      path: "/(mail)/:mailbox/";
       page: true;
-      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/inbox/[threadId]")>;
-      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/inbox/[threadId]")>;
+      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/[mailbox]/index")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/[mailbox]/index")>;
+    },
+    {
+      path: "/(mail)/search/";
+      page: true;
+      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/search/index")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/search/index")>;
+    },
+    {
+      path: "/(mail)/search/:threadId";
+      page: true;
+      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/search/[threadId]")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/search/[threadId]")>;
     }
   ];
   export default routes;
@@ -93,19 +105,35 @@ declare module "virtual:file-routes" {
       $$route?: undefined;
       children: readonly [
         {
-          path: "/inbox/";
-          id: "/inbox/";
+          path: "/search/";
+          id: "/search/";
           page: true;
-          $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/inbox/index")>;
-          $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/inbox/index")>;
+          $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/search/index")>;
+          $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/search/index")>;
           children?: undefined;
         },
         {
-          path: "/inbox/:threadId";
-          id: "/inbox/:threadId";
+          path: "/:mailbox/";
+          id: "/:mailbox/";
           page: true;
-          $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/inbox/[threadId]")>;
-          $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/inbox/[threadId]")>;
+          $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/[mailbox]/index")>;
+          $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/[mailbox]/index")>;
+          children?: undefined;
+        },
+        {
+          path: "/search/:threadId";
+          id: "/search/:threadId";
+          page: true;
+          $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/search/[threadId]")>;
+          $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/search/[threadId]")>;
+          children?: undefined;
+        },
+        {
+          path: "/:mailbox/:threadId";
+          id: "/:mailbox/:threadId";
+          page: true;
+          $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/[mailbox]/[threadId]")>;
+          $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/[mailbox]/[threadId]")>;
           children?: undefined;
         }
       ];

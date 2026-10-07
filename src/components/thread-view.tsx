@@ -1,23 +1,13 @@
 import { Title } from "@solidjs/meta";
-import type { RouteProps } from "@solidjs/router";
 import { createMemo, For, Loading, Show } from "solid-js";
-import {
-  ArchiveIcon,
-  ArrowLeftIcon,
-  SendIcon,
-  StarIcon,
-} from "../../../components/icons";
-import { ThreadPageSkeleton } from "../../../components/skeletons";
-import { iconButtonClass, LabelChip, UserAvatar } from "../../../components/ui";
-import { getThread } from "../../../lib/queries";
-import { defineFileRoute } from "@solidjs/router/fs";
+import { getThread } from "../lib/queries";
+import { ArchiveIcon, ArrowLeftIcon, SendIcon, StarIcon } from "./icons";
+import { ThreadPageSkeleton } from "./skeletons";
+import { iconButtonClass, LabelChip, UserAvatar } from "./ui";
 
-export const route = defineFileRoute("/inbox/:threadId", {
-  preload: (params) => getThread(params.params.threadId),
-});
-
-export default function ThreadPage(props: RouteProps<typeof route>) {
-  const thread = createMemo(() => getThread(props.params.threadId), {
+/** A conversation, shared by `/:mailbox/:threadId` and `/search/:threadId` — only where "back" goes differs. */
+export function ThreadView(props: { threadId: string; backHref: string }) {
+  const thread = createMemo(() => getThread(props.threadId), {
     name: "thread",
   });
 
@@ -38,7 +28,7 @@ export default function ThreadPage(props: RouteProps<typeof route>) {
               <a
                 aria-label="Back to list"
                 class="text-gray hover:bg-card inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-colors hover:text-white"
-                href="/inbox"
+                href={props.backHref}
               >
                 <ArrowLeftIcon class="size-5" />
               </a>
@@ -52,13 +42,16 @@ export default function ThreadPage(props: RouteProps<typeof route>) {
                 <ArchiveIcon class="size-4" />
               </button>
               <button
-                aria-label="Remove star"
-                aria-pressed="true"
-                class="text-accent hover:bg-card inline-flex size-8 shrink-0 items-center justify-center rounded-full transition-colors"
-                title="Remove star"
+                aria-label={t().starred ? "Remove star" : "Star"}
+                aria-pressed={t().starred ? "true" : "false"}
+                class={[
+                  "hover:bg-card inline-flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
+                  t().starred ? "text-accent" : "text-muted hover:text-white",
+                ]}
+                title={t().starred ? "Remove star" : "Star"}
                 type="button"
               >
-                <StarIcon class="size-4" filled />
+                <StarIcon class="size-4" filled={t().starred} />
               </button>
               <span class="text-gray ml-auto text-xs tabular-nums">
                 {t().messageCount === 1
@@ -115,7 +108,7 @@ export default function ThreadPage(props: RouteProps<typeof route>) {
                     class="border-divider placeholder-gray focus:border-accent focus:ring-accent/25 bg-card min-h-24 w-full resize-y rounded-md border px-3 py-2 text-sm leading-relaxed text-white transition-colors focus:ring-2 focus:outline-none"
                     id="reply"
                     name="body"
-                    placeholder={`Reply to ${t().from.name.split(" ")[0]}…`}
+                    placeholder={`Reply to ${t().replyTo}…`}
                   />
                   <div class="flex justify-end">
                     <span class="text-gray flex shrink-0 gap-2 pr-1 text-xs">

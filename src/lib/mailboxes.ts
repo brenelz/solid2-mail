@@ -11,3 +11,10 @@ export type Mailbox = (typeof MAILBOXES)[number]["id"];
 
 export type MailboxCounts = Record<Mailbox, number>;
 
+
+/** Route `matchFilters` value: `/:mailbox` only matches these, anything else falls through to the 404 route. */
+export const MAILBOX_IDS: readonly Mailbox[] = MAILBOXES.map((mailbox) => mailbox.id);
+
+export function mailboxName(id: Mailbox) {
+  return MAILBOXES.find((mailbox) => mailbox.id === id)!.name;
+}

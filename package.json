@@ -15,10 +15,12 @@
   "devDependencies": {
     "@solidjs/diagnostics": "2.0.0-rc.13",
     "@solidjs/vite-plugin": "3.0.0-next.47",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.6.4",
     "eslint-plugin-solid": "~0.18.1",
-    "filesystem-routing": "0.4.0",
-    "oxlint": "~1.79.0",
+    "filesystem-routing": "^0.4.0",
+    "oxlint": "~1.87.0",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "vite": "^8.3.3"
   },

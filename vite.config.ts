@@ -1,6 +1,6 @@
-import { fileURLToPath } from "node:url";
 import { fileRoutes } from "filesystem-routing/vite";
 import solid from "@solidjs/vite-plugin";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
@@ -15,5 +15,6 @@ export default defineConfig({
       serverFunctions: { configure: "./src/server-config.ts" },
     }),
     fileRoutes({ httpMethods: true, types: true }),
+    tailwindcss(),
   ],
 });

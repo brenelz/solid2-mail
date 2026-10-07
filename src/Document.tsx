@@ -3,15 +3,22 @@ import { HydrationScript } from "@solidjs/web";
 
 export default function Document(props: ParentProps) {
   return (
-    <html lang="en">
+    <html lang="en" class="dark">
       <head>
         <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="theme-color" content="#000000" />
         <link rel="icon" href="/favicon.ico" />
-        <title>Solid App</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap"
+        />
+        <title>Stamp</title>
         <HydrationScript />
       </head>
-      <body>{props.children}</body>
+      <body class="flex min-h-dvh flex-col">{props.children}</body>
     </html>
   );
 }

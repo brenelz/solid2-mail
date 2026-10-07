@@ -1,6 +1,6 @@
 import { Title } from "@solidjs/meta";
 import { Loading } from "solid-js";
-import { paths, Router } from "./router";
+import { Router } from "./router";
 import "./App.css";
 
 export default function App() {
@@ -9,7 +9,7 @@ export default function App() {
       {(props) => (
         <>
           <Title>Solid 2 Mail</Title>
-          <Loading fallback={<main>Loading…</main>}>{props.children}</Loading>
+          <Loading fallback={<main>Loading...</main>}>{props.children}</Loading>
         </>
       )}
     </Router>

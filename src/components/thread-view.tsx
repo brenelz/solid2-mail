@@ -27,6 +27,7 @@ export function ThreadView(props: { threadId: string; backHref: string }) {
     (unreadId) => {
       if (unreadId) void markRead([unreadId], true);
     },
+    { name: "markOpenedThreadRead" },
   );
 
   return (

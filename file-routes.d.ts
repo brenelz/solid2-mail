@@ -35,22 +35,10 @@ declare module "virtual:file-routes" {
   /** The flat route manifest, in scan order. */
   const routes: readonly [
     {
-      path: "/(mail)/search/:threadId";
+      path: "/(mail)";
       page: true;
-      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/search/[threadId]")>;
-      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/search/[threadId]")>;
-    },
-    {
-      path: "/*404";
-      page: true;
-      $component: FileRouteLazyRef<typeof import("./src/routes/[...404]")>;
-      $$route: FileRouteEagerRef<typeof import("./src/routes/[...404]")>;
-    },
-    {
-      path: "/";
-      page: true;
-      $component: FileRouteLazyRef<typeof import("./src/routes/index")>;
-      $$route: FileRouteEagerRef<typeof import("./src/routes/index")>;
+      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)")>;
     },
     {
       path: "/(mail)/:mailbox/:threadId";
@@ -65,16 +53,28 @@ declare module "virtual:file-routes" {
       $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/[mailbox]/index")>;
     },
     {
-      path: "/(mail)";
+      path: "/(mail)/search/:threadId";
       page: true;
-      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)")>;
-      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)")>;
+      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/search/[threadId]")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/search/[threadId]")>;
     },
     {
       path: "/(mail)/search/";
       page: true;
       $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/search/index")>;
       $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/search/index")>;
+    },
+    {
+      path: "/*404";
+      page: true;
+      $component: FileRouteLazyRef<typeof import("./src/routes/[...404]")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/[...404]")>;
+    },
+    {
+      path: "/";
+      page: true;
+      $component: FileRouteLazyRef<typeof import("./src/routes/index")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/index")>;
     }
   ];
   export default routes;

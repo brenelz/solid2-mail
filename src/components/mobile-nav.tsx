@@ -18,17 +18,17 @@ const MobileNavContext = createContext<MobileNav>();
 
 /** Whether the small-screen navigation drawer is open; the top bar's menu button and the drawer share it. */
 export function MobileNavProvider(props: ParentProps) {
-  const [open, setOpen] = createSignal(false, { name: "mobileNavOpen" });
-  const nav: MobileNav = { open, show: () => setOpen(true), hide: () => setOpen(false) };
-
-  // Picking a mailbox, label or anything else navigates: close the drawer behind it.
+  // Picking a mailbox, label or anything else navigates, which closes the drawer: it remembers the location it
+  // was opened at and reads as closed anywhere else. Derived rather than closed by an effect, so navigation
+  // never triggers a write.
   const location = useLocation();
-  createEffect(
-    () => location.pathname + location.search,
-    () => {
-      nav.hide(); // an effect may only return a cleanup function, so don't return the setter's value
-    },
-  );
+  const here = () => location.pathname + location.search;
+  const [openedAt, setOpenedAt] = createSignal<string | undefined>(undefined, { name: "mobileNavOpenedAt" });
+  const nav: MobileNav = {
+    open: () => openedAt() === here(),
+    show: () => setOpenedAt(here()),
+    hide: () => setOpenedAt(undefined),
+  };
 
   return <MobileNavContext value={nav}>{props.children}</MobileNavContext>;
 }
@@ -63,7 +63,7 @@ export function MobileNavDrawer() {
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  });
+  }, { name: "mobileNavEscape" });
 
   return (
     <Show when={nav.open()}>

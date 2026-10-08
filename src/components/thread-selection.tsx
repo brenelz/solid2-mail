@@ -1,7 +1,6 @@
 import { useAction } from "@solidjs/router";
 import {
   createContext,
-  createEffect,
   createMemo,
   createOptimistic,
   createSignal,
@@ -35,20 +34,47 @@ const SelectionContext = createContext<Selection | null>(null);
 
 export const useSelection = () => useContext(SelectionContext) ?? undefined;
 
+const NONE: ReadonlySet<string> = new Set();
+const NO_THREADS: ThreadListItem[] = [];
+const sameThreads = (a: ThreadListItem[], b: ThreadListItem[]) =>
+  a.length === b.length && a.every((thread, i) => thread === b[i]);
+
 /** Selection for one list. `list` names it (mailbox or search query): changing it starts a fresh selection. */
 export function ThreadSelection(
   props: ParentProps<{ threads: ThreadListItem[]; list: string; mailbox?: Mailbox }>,
 ) {
-  const [ids, setIds] = createSignal<ReadonlySet<string>>(new Set(), { name: "selectedIds" });
+  // The selected ids remember which list they belong to; on any other list nothing is selected. Derived rather
+  // than reset by an effect: an effect writing state on every navigation fought overlapping navigation
+  // transitions (fast mailbox switching hit "Potential Infinite Loop Detected").
+  const [state, setState] = createSignal<{ list: string; ids: ReadonlySet<string> }>(
+    { list: "", ids: new Set() },
+    { name: "selectedIds" },
+  );
+  const ids = (): ReadonlySet<string> => (state().list === props.list ? state().ids : NONE);
+  // Always an updater: it composes with writes not yet flushed, so several toggles in one tick (fast clicks)
+  // all land. Computing from `ids()` instead would read the last *flushed* selection and drop earlier toggles.
+  const setIds = (next: ReadonlySet<string> | ((current: ReadonlySet<string>) => ReadonlySet<string>)) => {
+    setState((previous) => {
+      const current = previous.list === props.list ? previous.ids : NONE;
+      return { list: props.list, ids: typeof next === "function" ? next(current) : next };
+    });
+  };
   const [busy, setBusy] = createOptimistic(false);
 
-  const selected = createMemo(() => props.threads.filter((t) => ids().has(t.id)), { name: "selectedThreads" });
+  // Stable output: the same empty array whenever nothing is selected (always the case while switching lists)
+  // and element-wise equality otherwise. A fresh array per run made this memo "change" on every update of the
+  // list, which under fast mailbox switching re-staged it endlessly (Potential Infinite Loop Detected).
+  const selected = createMemo(
+    () => {
+      const current = ids();
+      return current.size === 0 ? NO_THREADS : props.threads.filter((t) => current.has(t.id));
+    },
+    { name: "selectedThreads", equals: sameThreads },
+  );
   const allSelected = () => props.threads.length > 0 && selected().length === props.threads.length;
   const clear = () => {
-    setIds(new Set<string>());
+    setIds(NONE);
   };
-
-  createEffect(() => props.list, clear);
 
   // Same pattern as the forms: in-flight state set on submit (reverts when the action's update commits),
   // selection cleared once the change is on screen.

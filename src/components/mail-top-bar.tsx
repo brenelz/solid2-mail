@@ -43,9 +43,13 @@ function SearchForm() {
 
   // The URL is the source of truth, but never overwrite the box while the user is typing in it: a navigation
   // landing late would otherwise clobber newer keystrokes. Label links, Back, leaving search etc. sync it.
-  createEffect(urlQuery, (q) => {
-    if (input && document.activeElement !== input) input.value = q;
-  });
+  createEffect(
+    urlQuery,
+    (q) => {
+      if (input && document.activeElement !== input) input.value = q;
+    },
+    { name: "searchBoxSync" },
+  );
 
   return (
     <form class="relative" onSubmit={(e) => e.preventDefault()} role="search">

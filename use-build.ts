@@ -1,3 +1,4 @@
+import path from "node:path";
 import { parseAst, runnerImport, type Plugin } from "vite";
 
 type Range = { start: number; end: number };
@@ -73,7 +74,8 @@ export function useBuild(): Plugin {
           },
         ],
       });
-      dependencies.set(id, result.dependencies);
+      // Virtual modules (the server-only stub) are not files; watching them breaks dev import analysis.
+      dependencies.set(id, result.dependencies.filter((file) => path.isAbsolute(file)));
       return await Promise.all(
         registry.map(async (fn, index) => {
           const json = JSON.stringify(await fn());
@@ -108,6 +110,16 @@ export function useBuild(): Plugin {
       for (const id of cache.keys()) {
         if (id === changed || dependencies.get(id)?.includes(changed)) cache.delete(id);
       }
+    },
+    hotUpdate({ file, modules }) {
+      // Importers of a changed dependency are invalidated, but the module that inlined its result may not be.
+      const graph = this.environment.moduleGraph;
+      const stale = [...dependencies]
+        .filter(([, files]) => files.includes(file))
+        .flatMap(([id]) => [...(graph.getModulesByFile(id) ?? [])]);
+      if (!stale.length) return;
+      for (const mod of stale) graph.invalidateModule(mod);
+      return [...modules, ...stale];
     },
   };
 }

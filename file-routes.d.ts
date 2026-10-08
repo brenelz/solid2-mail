@@ -41,12 +41,6 @@ declare module "virtual:file-routes" {
       $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/search/[threadId]")>;
     },
     {
-      path: "/(mail)/search/";
-      page: true;
-      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/search/index")>;
-      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/search/index")>;
-    },
-    {
       path: "/*404";
       page: true;
       $component: FileRouteLazyRef<typeof import("./src/routes/[...404]")>;
@@ -65,16 +59,22 @@ declare module "virtual:file-routes" {
       $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/[mailbox]/[threadId]")>;
     },
     {
+      path: "/(mail)/:mailbox/";
+      page: true;
+      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/[mailbox]/index")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/[mailbox]/index")>;
+    },
+    {
       path: "/(mail)";
       page: true;
       $component: FileRouteLazyRef<typeof import("./src/routes/(mail)")>;
       $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)")>;
     },
     {
-      path: "/(mail)/:mailbox/";
+      path: "/(mail)/search/";
       page: true;
-      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/[mailbox]/index")>;
-      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/[mailbox]/index")>;
+      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/search/index")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/search/index")>;
     }
   ];
   export default routes;

@@ -230,3 +230,13 @@ export const MinusIcon = (props: IconProps) => (
     <path d="M5 12h14" />
   </Icon>
 );
+
+export const ArchiveRestoreIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <rect height="5" rx="1" width="20" x="2" y="3" />
+    <path d="M4 8v11a2 2 0 0 0 2 2h2" />
+    <path d="M20 8v11a2 2 0 0 1-2 2h-2" />
+    <path d="m9 15 3-3 3 3" />
+    <path d="M12 12v9" />
+  </Icon>
+);

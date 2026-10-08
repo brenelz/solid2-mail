@@ -1,8 +1,10 @@
 import { Title } from "@solidjs/meta";
-import { createMemo, For, Loading, Show } from "solid-js";
+import { useAction, useNavigate } from "@solidjs/router";
+import { createEffect, createMemo, createOptimistic, For, Loading, Show } from "solid-js";
+import { markThreadsRead, moveThreads, starThreads } from "../lib/mutations";
 import { getThread } from "../lib/queries";
-import type { Message } from "../lib/types";
-import { ArchiveIcon, ArrowLeftIcon, StarIcon } from "./icons";
+import type { Message, Thread } from "../lib/types";
+import { ArchiveIcon, ArchiveRestoreIcon, ArrowLeftIcon, StarIcon } from "./icons";
 import { ReplyForm } from "./reply-form";
 import { ThreadPageSkeleton } from "./skeletons";
 import { iconButtonClass, LabelChip, UserAvatar } from "./ui";
@@ -12,6 +14,20 @@ export function ThreadView(props: { threadId: string; backHref: string }) {
   const thread = createMemo(() => getThread(props.threadId), {
     name: "thread",
   });
+
+  // Opening an unread thread marks it read (like the original). Done here rather than in `getThread`, which
+  // also runs from preloads (hover/prefetch) and must not mark anything. The action's revalidation refreshes
+  // the lists and unread counts; once the thread comes back read this has nothing left to do.
+  const markRead = useAction(markThreadsRead);
+  createEffect(
+    () => {
+      const current = thread();
+      return current && !current.read ? current.id : undefined;
+    },
+    (unreadId) => {
+      if (unreadId) void markRead([unreadId], true);
+    },
+  );
 
   return (
     <Loading fallback={<ThreadPageSkeleton />}>
@@ -26,39 +42,7 @@ export function ThreadView(props: { threadId: string; backHref: string }) {
         {(t) => (
           <div class="flex h-full flex-col">
             <Title>{`${t().subject} · Stamp`}</Title>
-            <div class="border-divider/70 flex h-14 shrink-0 items-center gap-1 border-b bg-black px-3 sm:px-6">
-              <a
-                aria-label="Back to list"
-                class="text-gray hover:bg-card inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-colors hover:text-white"
-                href={props.backHref}
-              >
-                <ArrowLeftIcon class="size-5" />
-              </a>
-              <span class="bg-divider mx-1 h-5 w-px" />
-              <button
-                aria-label="Archive"
-                class={iconButtonClass}
-                title="Archive"
-                type="button"
-              >
-                <ArchiveIcon class="size-4" />
-              </button>
-              <button
-                aria-label={t().starred ? "Remove star" : "Star"}
-                aria-pressed={t().starred ? "true" : "false"}
-                class={[
-                  "hover:bg-card inline-flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
-                  t().starred ? "text-accent" : "text-muted hover:text-white",
-                ]}
-                title={t().starred ? "Remove star" : "Star"}
-                type="button"
-              >
-                <StarIcon class="size-4" filled={t().starred} />
-              </button>
-              <span class="text-gray ml-auto text-xs tabular-nums">
-                {t().messages.length === 1 ? "1 message" : `${t().messages.length} messages`}
-              </span>
-            </div>
+            <ThreadToolbar backHref={props.backHref} thread={t()} />
 
             <article class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 pb-24 sm:px-8">
               <div class="mx-auto w-full max-w-4xl">
@@ -106,5 +90,77 @@ function MessageView(props: { message: Message }) {
         <For each={props.message.paragraphs}>{(paragraph) => <p>{paragraph}</p>}</For>
       </div>
     </article>
+  );
+}
+
+/** Back, Archive / Move to inbox and Star for the open thread. */
+function ThreadToolbar(props: { thread: Thread; backHref: string }) {
+  const navigate = useNavigate();
+  const move = useAction(moveThreads);
+  const star = useAction(starThreads);
+
+  // Optimistic like the list rows: the star flips on submit and falls back to the server's value once saved.
+  const [starred, setStarred] = createOptimistic(() => props.thread.starred);
+  const [moving, setMoving] = createOptimistic(false);
+  const isThisThread = (ids: string[]) => ids.includes(props.thread.id);
+  // eslint-disable-next-line solid/reactivity -- action hooks are event-like: read the thread id at submit time
+  starThreads.onSubmit((ids, value) => {
+    if (isThisThread(ids)) setStarred(value);
+  });
+  // eslint-disable-next-line solid/reactivity -- action hooks are event-like: read the thread id at submit time
+  moveThreads.onSubmit((ids) => {
+    if (isThisThread(ids)) setMoving(true);
+  });
+
+  const archived = () => props.thread.mailbox === "archive";
+  // Like the original: once moved, the thread no longer belongs where you were reading it, so go back to the list.
+  const toggleArchived = async () => {
+    const result = await move([props.thread.id], archived() ? "inbox" : "archive");
+    if (result?.ok) navigate(props.backHref);
+  };
+
+  return (
+    <div class="border-divider/70 flex h-14 shrink-0 items-center gap-1 border-b bg-black px-3 sm:px-6">
+      <a
+        aria-label="Back to list"
+        class="text-gray hover:bg-card inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-colors hover:text-white"
+        href={props.backHref}
+      >
+        <ArrowLeftIcon class="size-5" />
+      </a>
+      <span class="bg-divider mx-1 h-5 w-px" />
+      {/* Sent threads have nowhere to be archived from (same rule as the list rows). */}
+      <Show when={props.thread.mailbox !== "sent"}>
+        <button
+          aria-busy={moving() ? "true" : undefined}
+          aria-label={archived() ? "Move to inbox" : "Archive"}
+          class={[iconButtonClass, "disabled:cursor-default disabled:opacity-40"]}
+          disabled={moving()}
+          onClick={() => void toggleArchived()}
+          title={archived() ? "Move to inbox" : "Archive"}
+          type="button"
+        >
+          <Show when={archived()} fallback={<ArchiveIcon class="size-4" />}>
+            <ArchiveRestoreIcon class="size-4" />
+          </Show>
+        </button>
+      </Show>
+      <button
+        aria-label={starred() ? "Remove star" : "Star"}
+        aria-pressed={starred() ? "true" : "false"}
+        class={[
+          "hover:bg-card inline-flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
+          starred() ? "text-accent" : "text-muted hover:text-white",
+        ]}
+        onClick={() => void star([props.thread.id], !starred())}
+        title={starred() ? "Remove star" : "Star"}
+        type="button"
+      >
+        <StarIcon class="size-4" filled={starred()} />
+      </button>
+      <span class="text-gray ml-auto text-xs tabular-nums">
+        {props.thread.messages.length === 1 ? "1 message" : `${props.thread.messages.length} messages`}
+      </span>
+    </div>
   );
 }

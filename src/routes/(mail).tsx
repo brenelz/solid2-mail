@@ -7,6 +7,7 @@ import {
 import { DemoToolbar } from "../components/demo-toolbar";
 import { MailSidebar } from "../components/mail-sidebar";
 import { MailTopBar } from "../components/mail-top-bar";
+import { MobileNavDrawer, MobileNavProvider } from "../components/mobile-nav";
 import { defineFileRoute } from "@solidjs/router/fs";
 import {
   getCurrentUser,
@@ -27,6 +28,7 @@ export const route = defineFileRoute("/(mail)", {
 export default function MailLayout(props: ParentProps) {
   return (
     <ComposeProvider>
+      <MobileNavProvider>
       <div class="flex h-dvh flex-col pt-[env(safe-area-inset-top)]">
         <MailTopBar />
         <div class="flex min-h-0 flex-1">
@@ -39,6 +41,8 @@ export default function MailLayout(props: ParentProps) {
       <DemoToolbar />
       <ComposeButton variant="fab" />
       <ComposePanel />
+      <MobileNavDrawer />
+      </MobileNavProvider>
     </ComposeProvider>
   );
 }

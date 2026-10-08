@@ -51,10 +51,12 @@ export function RowButton(props: {
   active?: boolean;
   class?: string;
   children: JSX.Element;
+  onClick?: () => void;
 }) {
   return (
     <button
       aria-label={props.label}
+      onClick={() => props.onClick?.()}
       aria-pressed={props.active === undefined ? undefined : props.active ? "true" : "false"}
       class={[
         "inline-flex size-6 items-center justify-center rounded-full transition-colors hover:bg-white/10",

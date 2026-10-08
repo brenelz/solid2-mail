@@ -8,6 +8,7 @@ import {
   ThreadList,
   ThreadListHeader,
 } from "../../../components/thread-list";
+import { ThreadSelection } from "../../../components/thread-selection";
 import { MAILBOX_IDS, mailboxName, type Mailbox } from "../../../lib/mailboxes";
 import { getThreads } from "../../../lib/queries";
 
@@ -28,18 +29,20 @@ export default function MailboxPage(props: RouteProps<typeof route>) {
     <div class="flex h-full flex-col">
       <Title>{`${title()} · Stamp`}</Title>
       <Loading fallback={<ThreadListSkeleton title={title()} />}>
-        <ThreadListHeader
-          count={threads().length}
-          title={title()}
-          total={threads().length}
-        />
-        <div class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
-          <ThreadList
-            empty={mailboxEmptyCopy[mailbox()]}
-            hrefFor={(id) => `/${mailbox()}/${id}`}
-            threads={threads()}
+        <ThreadSelection list={mailbox()} mailbox={mailbox()} threads={threads()}>
+          <ThreadListHeader
+            count={threads().length}
+            title={title()}
+            total={threads().length}
           />
-        </div>
+          <div class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
+            <ThreadList
+              empty={mailboxEmptyCopy[mailbox()]}
+              hrefFor={(id) => `/${mailbox()}/${id}`}
+              threads={threads()}
+            />
+          </div>
+        </ThreadSelection>
       </Loading>
     </div>
   );

@@ -1,15 +1,14 @@
 import { useIsRouting, useLocation, useNavigate } from "@solidjs/router";
 import { createEffect, untrack } from "solid-js";
 import { searchHref, searchQuery } from "../lib/search";
-import { BrandMark, GitHubIcon, MenuIcon, SearchIcon } from "./icons";
+import { BrandMark, GitHubIcon, SearchIcon } from "./icons";
+import { MobileNavTrigger } from "./mobile-nav";
 import { iconButtonClass } from "./ui";
 
 export function MailTopBar() {
   return (
     <header class="flex h-16 shrink-0 items-center gap-2 px-3 sm:px-4 md:gap-3">
-      <button aria-label="Open navigation" class={`${iconButtonClass} -ml-1 size-10 md:hidden`} type="button">
-        <MenuIcon class="size-5" />
-      </button>
+      <MobileNavTrigger />
       <div class="hidden w-56 items-center gap-1 pl-2 md:flex">
         <a aria-label="Stamp inbox" class="flex items-center gap-2.5 text-xl font-bold tracking-tight" href="/inbox">
           <BrandMark class="text-accent size-7" />

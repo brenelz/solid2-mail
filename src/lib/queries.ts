@@ -49,12 +49,12 @@ export const getDelaysEnabled = query(async (): Promise<boolean> => {
   return isDelaysEnabled();
 }, "delaysEnabled");
 
-/** Matches subject, snippet, participants and label names (like the original). An empty query matches nothing. */
+/** Matches subject, snippet, participants and label names (like the original). An empty query returns every thread. */
 export const searchThreads = query(async (q: string): Promise<ThreadListItem[]> => {
   "use server";
   const needle = q.trim().toLowerCase();
-  if (!needle) return [];
   await delay();
+  if (!needle) return threads;
   return threads.filter((t) =>
     [t.subject, t.snippet, ...t.participants, ...t.labels.map((l) => l.name)].some((field) =>
       field.toLowerCase().includes(needle),

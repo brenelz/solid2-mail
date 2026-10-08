@@ -39,6 +39,8 @@ export type Thread = {
   subject: string;
   labels: Label[];
   starred: boolean;
+  read: boolean;
+  mailbox: ThreadLocation;
   /** First name the reply box addresses: the other side of the conversation. */
   replyTo: string;
   /** Oldest first. */

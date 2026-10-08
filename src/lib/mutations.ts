@@ -1,6 +1,6 @@
 import { action } from "@solidjs/router";
 import { getRequestEvent, redirect, serializeCookie } from "@solidjs/web";
-import { addReply, createThread, delay, DELAYS_COOKIE } from "./server";
+import { addReply, createThread, delay, DELAYS_COOKIE, updateThreads } from "./server";
 
 // Router actions: forms post to them (`<form action={sendReply.with(id)} method="post">`), the form gets
 // `aria-busy` while one runs, and afterwards the router revalidates its queries, so lists, counts and
@@ -25,6 +25,31 @@ export const composeMessage = action(async (form: FormData) => {
   if (!body) return { ok: false, error: "Write a message first." };
   await delay();
   return createThread({ subject, body });
+});
+
+// Bulk actions for the list toolbar. Called with `useAction` (no form): ids of the selected threads plus the
+// new value. They only return once the change is made; the router's revalidation refreshes every list.
+
+/** Archive (`"archive"`) or move back to the Inbox (`"inbox"`). */
+export const moveThreads = action(async (ids: string[], to: "inbox" | "archive") => {
+  "use server";
+  await delay();
+  updateThreads(ids, { mailbox: to });
+  return { ok: true as const };
+});
+
+export const starThreads = action(async (ids: string[], starred: boolean) => {
+  "use server";
+  await delay();
+  updateThreads(ids, { starred });
+  return { ok: true as const };
+});
+
+export const markThreadsRead = action(async (ids: string[], read: boolean) => {
+  "use server";
+  await delay();
+  updateThreads(ids, { read });
+  return { ok: true as const };
 });
 
 /** Demo toolbar: turn the fake query latency on or off (stored in a cookie). */

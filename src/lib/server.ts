@@ -215,6 +215,8 @@ export function getThreadDetail(id: string): Thread | undefined {
     subject: item.subject,
     labels: item.labels,
     starred: item.starred,
+    read: item.read,
+    mailbox: item.mailbox,
     replyTo: counterpart(messages).map(firstName).join(", ") || firstName(me),
     messages,
   };
@@ -279,4 +281,14 @@ export function createThread(input: { subject: string; body: string }): Mutation
     { id: `msg-${id}-1`, from: me, to: [me], date: fullDate(now), paragraphs: paragraphsOf(input.body) },
   ]);
   return { ok: true, threadId: id };
+}
+
+/** Bulk edits from the list toolbar: move between Inbox/Archive, star, mark read. Unknown ids are skipped. */
+export function updateThreads(
+  ids: string[],
+  patch: Partial<Pick<ThreadListItem, "mailbox" | "starred" | "read">>,
+) {
+  for (const thread of threads) {
+    if (ids.includes(thread.id)) Object.assign(thread, patch);
+  }
 }

@@ -1,17 +1,15 @@
 import { Title } from "@solidjs/meta";
 import { useIsRouting, type RouteProps } from "@solidjs/router";
 import { defineFileRoute } from "@solidjs/router/fs";
-import { createMemo, Loading, Show } from "solid-js";
+import { createMemo, Loading } from "solid-js";
 import { ThreadListSkeleton } from "../../../components/skeletons";
-import { EmptyState, ThreadList, ThreadListHeader } from "../../../components/thread-list";
+import { ThreadList, ThreadListHeader } from "../../../components/thread-list";
+import { ThreadSelection } from "../../../components/thread-selection";
 import { searchThreads } from "../../../lib/queries";
 import { searchHref, searchQuery } from "../../../lib/search";
 
 export const route = defineFileRoute("/search", {
-  preload: ({ location }) => {
-    const q = searchQuery(location.query);
-    if (q) return searchThreads(q);
-  },
+  preload: ({ location }) => searchThreads(searchQuery(location.query)),
 });
 
 export default function SearchPage(props: RouteProps<typeof route>) {
@@ -20,17 +18,8 @@ export default function SearchPage(props: RouteProps<typeof route>) {
   return (
     <div class="flex h-full flex-col">
       <Title>{q() ? `${q()} · Search · Stamp` : "Search · Stamp"}</Title>
-      <Show
-        when={q()}
-        fallback={
-          <>
-            <ThreadListHeader title="Search" />
-            <EmptyState title="Search your mail" />
-          </>
-        }
-      >
-        {(q) => <SearchResults q={q()} />}
-      </Show>
+      {/* An empty query (the box blanked out) lists every thread. */}
+      <SearchResults q={q()} />
     </div>
   );
 }
@@ -42,6 +31,8 @@ function SearchResults(props: { q: string }) {
 
   return (
     <Loading fallback={<ThreadListSkeleton count={4} title="Search" />}>
+      {/* No mailbox: search spans locations, so there's no Archive / Move to inbox here (like the original). */}
+      <ThreadSelection list={props.q} threads={results()}>
       <ThreadListHeader count={results().length} title="Search" total={results().length} />
       <div
         class={[
@@ -55,6 +46,7 @@ function SearchResults(props: { q: string }) {
           threads={results()}
         />
       </div>
+      </ThreadSelection>
     </Loading>
   );
 }

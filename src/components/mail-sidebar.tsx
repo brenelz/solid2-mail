@@ -4,6 +4,7 @@ import { getCurrentUser, getLabels, getMailboxCounts } from "../lib/queries";
 import { searchHref } from "../lib/search";
 import {
   ArchiveIcon,
+  BrandMark,
   ChevronsUpDownIcon,
   InboxIcon,
   SendIcon,
@@ -24,7 +25,18 @@ const mailboxIcons: Record<Mailbox, typeof InboxIcon> = {
 const linkClass =
   "group flex h-10 items-center gap-3 rounded-lg px-3 text-base tracking-tight transition-colors not-data-active:hover:bg-card data-active:bg-accent/15 data-active:text-accent data-active:font-bold data-active:[&_svg]:stroke-[2.5]";
 
+/** The desktop sidebar. On small screens the same content opens in the mobile navigation drawer. */
 export function MailSidebar() {
+  return (
+    <aside class="hidden w-60 shrink-0 md:flex">
+      <MailSidebarContent />
+    </aside>
+  );
+}
+
+/** Mailboxes, labels and the account card. In the drawer the brand row takes the Compose button's place
+ *  (small screens have the floating Compose button instead). */
+export function MailSidebarContent(props: { drawer?: boolean }) {
   const mailboxCounts = createMemo(() => getMailboxCounts(), { name: "mailboxCounts" });
   const labels = createMemo(() => getLabels(), { name: "labels" });
   const currentUser = createMemo(() => getCurrentUser(), {
@@ -32,11 +44,20 @@ export function MailSidebar() {
   });
 
   return (
-    <aside class="hidden w-60 shrink-0 md:flex">
-      <div class="flex min-h-0 flex-1 flex-col gap-6 px-3 pt-1 pb-3">
-        <div class="px-1">
-          <ComposeButton variant="sidebar" />
-        </div>
+      <div class={["flex min-h-0 flex-1 flex-col gap-6 px-3 pb-3", props.drawer ? "pt-0" : "pt-1"]}>
+        <Show
+          when={props.drawer}
+          fallback={
+            <div class="px-1">
+              <ComposeButton variant="sidebar" />
+            </div>
+          }
+        >
+          <a aria-label="Stamp inbox" class="flex h-10 items-center gap-2.5 px-2 text-xl font-bold tracking-tight" href="/inbox">
+            <BrandMark class="text-accent size-7" />
+            Stamp
+          </a>
+        </Show>
 
         <nav aria-label="Mailboxes" class="flex flex-col gap-0.5">
           <For each={MAILBOXES}>
@@ -114,6 +135,5 @@ export function MailSidebar() {
           </Loading>
         </div>
       </div>
-    </aside>
   );
 }

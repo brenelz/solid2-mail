@@ -1,13 +1,10 @@
 import { Title } from "@solidjs/meta";
 import type { RouteProps } from "@solidjs/router";
 import { defineFileRoute } from "@solidjs/router/fs";
-import { createMemo, Loading } from "solid-js";
+import { dynamicComponent } from "@solidjs/web";
+import { Loading } from "solid-js";
 import { ThreadListSkeleton } from "../../../components/skeletons";
-import {
-  mailboxEmptyCopy,
-  ThreadList,
-  ThreadListHeader,
-} from "../../../components/thread-list";
+import { ThreadListHeader, threadRowBehavior } from "../../../components/thread-list";
 import { ThreadSelection } from "../../../components/thread-selection";
 import { MAILBOX_IDS, mailboxName, type Mailbox } from "../../../lib/mailboxes";
 import { getThreads } from "../../../lib/queries";
@@ -21,27 +18,15 @@ export default function MailboxPage(props: RouteProps<typeof route>) {
   // Safe: matchFilters only let the four mailbox ids reach this route.
   const mailbox = () => props.params.mailbox as Mailbox;
   const title = () => mailboxName(mailbox());
-  const threads = createMemo(() => getThreads(mailbox()), {
-    name: "mailboxThreads",
-  });
+  // A server component: the rows render on the server; the props below fill its client positions.
+  const Threads = dynamicComponent(() => getThreads(mailbox()));
 
   return (
     <div class="flex h-full flex-col">
       <Title>{`${title()} · Stamp`}</Title>
       <Loading fallback={<ThreadListSkeleton title={title()} />}>
-        <ThreadSelection list={mailbox()} mailbox={mailbox()} threads={threads()}>
-          <ThreadListHeader
-            count={threads().length}
-            title={title()}
-            total={threads().length}
-          />
-          <div class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
-            <ThreadList
-              empty={mailboxEmptyCopy[mailbox()]}
-              hrefFor={(id) => `/${mailbox()}/${id}`}
-              threads={threads()}
-            />
-          </div>
+        <ThreadSelection list={mailbox()} mailbox={mailbox()}>
+          <Threads header={ThreadListHeader} row={threadRowBehavior} />
         </ThreadSelection>
       </Loading>
     </div>

@@ -15,13 +15,14 @@ import type { Mailbox, ThreadListItem } from "../lib/types";
 import { ArchiveIcon, ArchiveRestoreIcon, CheckIcon, MailIcon, MailOpenIcon, StarIcon, XIcon } from "./icons";
 import { RowButton } from "./ui";
 
+// Selection holds ids only: the threads themselves are server data. On a mailbox the rows are server markup
+// (the `getThreads` server component), so whatever needs the thread objects — the header's select-all and
+// bulk actions — gets them as props and derives the selected ones with `useSelectedThreads`.
 type Selection = {
-  /** Selected threads that are still in the list (archived-away rows drop out on their own). */
-  selected: Accessor<ThreadListItem[]>;
   isSelected: (id: string) => boolean;
   toggle: (id: string) => void;
-  allSelected: Accessor<boolean>;
-  toggleAll: () => void;
+  /** Select all of `ids`, or clear when they are all selected already. */
+  toggleAll: (ids: string[]) => void;
   clear: () => void;
   /** A bulk action is in flight: the toolbar is disabled until its result is on screen. */
   busy: Accessor<boolean>;
@@ -41,9 +42,7 @@ const sameThreads = (a: ThreadListItem[], b: ThreadListItem[]) =>
   a.length === b.length && a.every((thread, i) => thread === b[i]);
 
 /** Selection for one list. `list` names it (mailbox or search query): changing it starts a fresh selection. */
-export function ThreadSelection(
-  props: ParentProps<{ threads: ThreadListItem[]; list: string; mailbox?: Mailbox }>,
-) {
+export function ThreadSelection(props: ParentProps<{ list: string; mailbox?: Mailbox }>) {
   // The selected ids remember which list they belong to; on any other list nothing is selected. Derived rather
   // than reset by an effect: an effect writing state on every navigation fought overlapping navigation
   // transitions (fast mailbox switching hit "Potential Infinite Loop Detected").
@@ -61,18 +60,6 @@ export function ThreadSelection(
     });
   };
   const [busy, setBusy] = createOptimistic(false);
-
-  // Stable output: the same empty array whenever nothing is selected (always the case while switching lists)
-  // and element-wise equality otherwise. A fresh array per run made this memo "change" on every update of the
-  // list, which under fast mailbox switching re-staged it endlessly (Potential Infinite Loop Detected).
-  const selected = createMemo(
-    () => {
-      const current = ids();
-      return current.size === 0 ? NO_THREADS : props.threads.filter((t) => current.has(t.id));
-    },
-    { name: "selectedThreads", equals: sameThreads },
-  );
-  const allSelected = () => props.threads.length > 0 && selected().length === props.threads.length;
   const clear = () => {
     setIds(NONE);
   };
@@ -86,7 +73,6 @@ export function ThreadSelection(
   }
 
   const selection: Selection = {
-    selected,
     isSelected: (id) => ids().has(id),
     toggle: (id) =>
       setIds((current) => {
@@ -95,8 +81,10 @@ export function ThreadSelection(
         else next.add(id);
         return next;
       }),
-    allSelected,
-    toggleAll: () => setIds(allSelected() ? new Set<string>() : new Set(props.threads.map((t) => t.id))),
+    toggleAll: (all) =>
+      setIds((current) =>
+        all.length > 0 && all.every((id) => current.has(id)) ? new Set<string>() : new Set(all),
+      ),
     clear,
     busy,
     get mailbox() {
@@ -107,10 +95,28 @@ export function ThreadSelection(
   return <SelectionContext value={selection}>{props.children}</SelectionContext>;
 }
 
-/** Header checkbox. Drawn (disabled) without a selection context or rows, so the header keeps its shape. */
-export function SelectAll() {
+/**
+ * The selected threads among `threads` (archived-away rows drop out on their own). Stable output: the same
+ * empty array whenever nothing is selected (always the case while switching lists) and element-wise equality
+ * otherwise. A fresh array per run made this memo "change" on every update of the list, which under fast
+ * mailbox switching re-staged it endlessly (Potential Infinite Loop Detected).
+ */
+export function useSelectedThreads(threads: Accessor<ThreadListItem[]>): Accessor<ThreadListItem[]> {
   const selection = useSelection();
-  const all = () => !!selection?.allSelected();
+  return createMemo(
+    () => {
+      if (!selection) return NO_THREADS;
+      const list = threads().filter((t) => selection.isSelected(t.id));
+      return list.length === 0 ? NO_THREADS : list;
+    },
+    { name: "selectedThreads", equals: sameThreads },
+  );
+}
+
+/** Header checkbox. Drawn (disabled) without a selection context or rows, so the header keeps its shape. */
+export function SelectAll(props: { threads: ThreadListItem[]; selected: ThreadListItem[] }) {
+  const selection = useSelection();
+  const all = () => props.threads.length > 0 && props.selected.length === props.threads.length;
   return (
     <button
       aria-checked={all() ? "true" : "false"}
@@ -120,7 +126,7 @@ export function SelectAll() {
         all() ? "border-accent bg-accent text-white" : "border-gray/50 bg-card enabled:hover:border-gray text-transparent",
       ]}
       disabled={!selection}
-      onClick={() => selection?.toggleAll()}
+      onClick={() => selection?.toggleAll(props.threads.map((t) => t.id))}
       role="checkbox"
       type="button"
     >
@@ -130,13 +136,13 @@ export function SelectAll() {
 }
 
 /** "N selected" and the bulk actions, in place of the list title while anything is selected. */
-export function BulkActions() {
+export function BulkActions(props: { selected: ThreadListItem[] }) {
   const selection = useSelection()!;
   const move = useAction(moveThreads);
   const star = useAction(starThreads);
   const markRead = useAction(markThreadsRead);
 
-  const ids = () => selection.selected().map((t) => t.id);
+  const ids = () => props.selected.map((t) => t.id);
   // Clear the selection the moment a bulk action is clicked, instead of when the server answers: the rows
   // already show the change optimistically, so the checkmarks and this toolbar go away instantly. Everything
   // the action needs (ids, target values) is read before clearing, since it's derived from the selection.
@@ -149,17 +155,17 @@ export function BulkActions() {
   };
   // Archive / Move to inbox follow where the selected threads live (not which list shows them), so it works in
   // Starred and search too: all in the Inbox → Archive, all archived → Move to inbox, otherwise (mixed, Sent) none.
-  const locations = () => new Set(selection.selected().map((t) => t.mailbox));
+  const locations = () => new Set(props.selected.map((t) => t.mailbox));
   const canMove = () =>
     locations().size === 1 && (locations().has("inbox") || locations().has("archive"));
   const moveTo = () => (locations().has("archive") ? "inbox" : "archive");
   // Like the original: Star if any selected thread isn't starred yet, Mark as read if any is unread.
-  const shouldStar = () => selection.selected().some((t) => !t.starred);
-  const shouldRead = () => selection.selected().some((t) => !t.read);
+  const shouldStar = () => props.selected.some((t) => !t.starred);
+  const shouldRead = () => props.selected.some((t) => !t.read);
 
   return (
     <>
-      <span class="text-sm font-semibold tabular-nums">{selection.selected().length} selected</span>
+      <span class="text-sm font-semibold tabular-nums">{props.selected.length} selected</span>
       <Show when={canMove()}>
         <BulkButton
           label={moveTo() === "archive" ? "Archive" : "Move to inbox"}

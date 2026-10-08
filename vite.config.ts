@@ -7,6 +7,10 @@ import { defineConfig } from "vite";
 export default defineConfig({
   // Nitro takes the dev port from here (it would otherwise default to 3000); keep Vite's usual 5173.
   server: { port: 5173 },
+  // Inline seroval + seroval-plugins in dev SSR so both resolve the same build (with the `development`
+  // condition). Externalized, Node loads seroval-plugins' own `seroval` import as the production build: a
+  // second instance whose `Stream` fails the serializer's `instanceof` check — breaking server components.
+  ssr: { noExternal: ["seroval", "seroval-plugins"] },
   plugins: [
     solid({
       start: {
@@ -15,7 +19,7 @@ export default defineConfig({
       },
       ssr: true,
       diagnostics: true,
-      serverFunctions: { configure: "./src/server-config.ts" },
+      serverFunctions: { configure: "./src/server-config.ts", components: true },
     }),
     fileRoutes({ httpMethods: true, types: true }),
     tailwindcss(),

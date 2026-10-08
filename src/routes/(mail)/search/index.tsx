@@ -32,8 +32,8 @@ function SearchResults(props: { q: string }) {
   return (
     <Loading fallback={<ThreadListSkeleton count={4} title="Search" />}>
       {/* No mailbox: search spans locations, so there's no Archive / Move to inbox here (like the original). */}
-      <ThreadSelection list={props.q} threads={results()}>
-      <ThreadListHeader count={results().length} title="Search" total={results().length} />
+      <ThreadSelection list={props.q}>
+      <ThreadListHeader count={results().length} threads={results()} title="Search" total={results().length} />
       <div
         class={[
           "min-h-0 flex-1 overflow-y-auto overscroll-y-contain transition-opacity duration-200",

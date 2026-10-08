@@ -13,7 +13,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@solidjs/diagnostics": "2.0.0-rc.13",
+    "@solidjs/diagnostics": "2.0.0-rc.14",
     "@solidjs/vite-plugin": "3.0.0-next.47",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.6.4",
@@ -28,8 +28,8 @@
   "dependencies": {
     "@solidjs/meta": "1.0.0-next.2",
     "@solidjs/router": "2.0.0-next.36",
-    "@solidjs/web": "https://pkg.pr.new/mizulu/solid2/@solidjs/web@bc51ada",
-    "solid-js": "https://pkg.pr.new/mizulu/solid2/solid-js@bc51ada",
+    "@solidjs/web": "2.0.0-rc.14",
+    "solid-js": "2.0.0-rc.14",
     "valibot": "^1.5.0"
   }
 }

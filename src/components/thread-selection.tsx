@@ -4,6 +4,7 @@ import {
   createMemo,
   createOptimistic,
   createSignal,
+  flush,
   Show,
   useContext,
   type Accessor,
@@ -78,15 +79,10 @@ export function ThreadSelection(
 
   // Same pattern as the forms: in-flight state set on submit (reverts when the action's update commits),
   // selection cleared once the change is on screen.
-  // A row's own hover buttons use the same actions: only a bulk action (it carried exactly the selection)
-  // clears the selection afterwards.
-  const isSelection = (submitted: string[]) =>
-    submitted.length === ids().size && submitted.every((id) => ids().has(id));
+  // While any of these actions is in flight the toolbar is disabled (a fresh selection made meanwhile waits
+  // for it). The bulk buttons clear the selection themselves, on click (see BulkActions).
   for (const bulk of [moveThreads, starThreads, markThreadsRead]) {
-    // eslint-disable-next-line solid/reactivity -- settled hooks are event-like: compare with the selection now
-    bulk.onSubmit(() => setBusy(true)).onSettled((submission) => {
-      if (!submission.error && isSelection(submission.input[0])) clear();
-    });
+    bulk.onSubmit(() => setBusy(true));
   }
 
   const selection: Selection = {
@@ -141,6 +137,16 @@ export function BulkActions() {
   const markRead = useAction(markThreadsRead);
 
   const ids = () => selection.selected().map((t) => t.id);
+  // Clear the selection the moment a bulk action is clicked, instead of when the server answers: the rows
+  // already show the change optimistically, so the checkmarks and this toolbar go away instantly. Everything
+  // the action needs (ids, target values) is read before clearing, since it's derived from the selection.
+  // `flush` applies the clear now: a plain write would only land at the next flush, by which point the action
+  // has started its transition and the write would be held with it until the server answers.
+  const runOnSelection = (act: (selectedIds: string[]) => Promise<unknown>) => {
+    const selectedIds = ids();
+    flush(() => selection.clear());
+    void act(selectedIds);
+  };
   // Archive / Move to inbox follow where the selected threads live (not which list shows them), so it works in
   // Starred and search too: all in the Inbox → Archive, all archived → Move to inbox, otherwise (mixed, Sent) none.
   const locations = () => new Set(selection.selected().map((t) => t.mailbox));
@@ -157,19 +163,31 @@ export function BulkActions() {
       <Show when={canMove()}>
         <BulkButton
           label={moveTo() === "archive" ? "Archive" : "Move to inbox"}
-          onClick={() => void move(ids(), moveTo())}
+          onClick={() => {
+            const to = moveTo();
+            runOnSelection((selectedIds) => move(selectedIds, to));
+          }}
         >
           <Show when={moveTo() === "archive"} fallback={<ArchiveRestoreIcon class="size-4" />}>
             <ArchiveIcon class="size-4" />
           </Show>
         </BulkButton>
       </Show>
-      <BulkButton label={shouldStar() ? "Star" : "Remove star"} onClick={() => void star(ids(), shouldStar())}>
+      <BulkButton
+        label={shouldStar() ? "Star" : "Remove star"}
+        onClick={() => {
+          const starred = shouldStar();
+          runOnSelection((selectedIds) => star(selectedIds, starred));
+        }}
+      >
         <StarIcon class="size-4" filled={!shouldStar()} />
       </BulkButton>
       <BulkButton
         label={shouldRead() ? "Mark as read" : "Mark as unread"}
-        onClick={() => void markRead(ids(), shouldRead())}
+        onClick={() => {
+          const read = shouldRead();
+          runOnSelection((selectedIds) => markRead(selectedIds, read));
+        }}
       >
         <Show when={shouldRead()} fallback={<MailIcon class="size-4" />}>
           <MailOpenIcon class="size-4" />

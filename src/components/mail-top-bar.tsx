@@ -3,7 +3,7 @@ import { createEffect, untrack } from "solid-js";
 import { searchHref, searchQuery } from "../lib/search";
 import { BrandMark, GitHubIcon, SearchIcon } from "./icons";
 import { MobileNavTrigger } from "./mobile-nav";
-import { iconButtonClass } from "./ui";
+import { iconButtonClass, SolidBadge } from "./ui";
 
 export function MailTopBar() {
   return (
@@ -14,13 +14,14 @@ export function MailTopBar() {
           <BrandMark class="text-accent size-7" />
           Stamp
         </a>
+        <SolidBadge />
         <a
-          aria-label="View source on GitHub"
+          aria-label="View the SolidJS source on GitHub"
           class={iconButtonClass}
-          href="https://github.com/aurorascharff/next16-mail"
+          href="https://github.com/brenelz/solid2-mail"
           rel="noopener noreferrer"
           target="_blank"
-          title="View source on GitHub"
+          title="View the SolidJS source on GitHub"
         >
           <GitHubIcon class="size-4" />
         </a>

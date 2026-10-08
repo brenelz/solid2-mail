@@ -82,3 +82,15 @@ export function submitOnCommandEnter(event: KeyboardEvent & { currentTarget: HTM
     event.currentTarget.form?.requestSubmit();
   }
 }
+
+/** Marks this as the SolidJS port of Stamp, next to the logo. */
+export function SolidBadge() {
+  return (
+    <span
+      class="border-solid/60 bg-solid/20 text-solid-light inline-flex h-5 items-center rounded-full border px-1.5 text-[10px] font-semibold tracking-wide uppercase"
+      title="This version of Stamp is built with SolidJS 2"
+    >
+      SolidJS
+    </span>
+  );
+}

@@ -9,6 +9,9 @@
   --color-surface: #000000;
 
   --color-accent: #3d6bff;
+  /* SolidJS brand blue, for the "SolidJS" badge next to the logo. */
+  --color-solid: #446b9e;
+  --color-solid-light: #8fb3e8;
   --color-accent-hover: #1b50ff;
   --color-danger: #e54848;
 

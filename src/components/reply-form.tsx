@@ -19,8 +19,11 @@ export function ReplyForm(props: {
       setSending(true);
     })
     .onSettled((submission) => {
-      if (submission.error) {
-        setError(submission.result?.error);
+      // Validation comes back as a returned `{ ok: false, error }`, not a thrown error: treat both as failure
+      // and keep the text so it can be fixed and resent.
+      const result = submission.result as { ok?: boolean; error?: string } | undefined;
+      if (submission.error || result?.ok === false) {
+        setError(result?.error ?? "Couldn't send this reply. Try again.");
       } else {
         setError(undefined);
 

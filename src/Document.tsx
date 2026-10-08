@@ -15,7 +15,11 @@ export default function Document(props: ParentProps) {
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap"
         />
-        <title>Stamp</title>
+        <meta
+          name="description"
+          content="Stamp, a Gmail-style mail client demo rebuilt with SolidJS 2 — a port of aurorascharff/next16-mail."
+        />
+        <title>Stamp · SolidJS</title>
         <HydrationScript />
       </head>
       <body class="flex min-h-dvh flex-col">{props.children}</body>

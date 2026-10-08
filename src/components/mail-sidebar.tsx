@@ -12,7 +12,7 @@ import {
 } from "./icons";
 import { CurrentUserCardSkeleton, LabelNavSkeleton } from "./skeletons";
 import { ComposeButton } from "./compose";
-import { UserAvatar } from "./ui";
+import { SolidBadge, UserAvatar } from "./ui";
 
 const mailboxIcons: Record<Mailbox, typeof InboxIcon> = {
   archive: ArchiveIcon,
@@ -56,6 +56,7 @@ export function MailSidebarContent(props: { drawer?: boolean }) {
           <a aria-label="Stamp inbox" class="flex h-10 items-center gap-2.5 px-2 text-xl font-bold tracking-tight" href="/inbox">
             <BrandMark class="text-accent size-7" />
             Stamp
+            <SolidBadge />
           </a>
         </Show>
 

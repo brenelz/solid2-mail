@@ -8,7 +8,7 @@ export default function App() {
     <Router>
       {(props) => (
         <>
-          <Title>Solid 2 Mail</Title>
+          <Title>Stamp · SolidJS</Title>
           <Loading fallback={<main>Loading...</main>}>{props.children}</Loading>
         </>
       )}

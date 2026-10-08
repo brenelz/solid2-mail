@@ -12,12 +12,14 @@ import { defineFileRoute } from "@solidjs/router/fs";
 import {
   getCurrentUser,
   getDelaysEnabled,
+  getLabels,
   getMailboxCounts,
 } from "../lib/queries";
 
 export const route = defineFileRoute("/(mail)", {
   preload: () => [
     void getMailboxCounts(),
+    void getLabels(),
     void getCurrentUser(),
     void getDelaysEnabled(),
   ],

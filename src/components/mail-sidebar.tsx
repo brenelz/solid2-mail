@@ -1,7 +1,6 @@
 import { createMemo, For, Loading, Show } from "solid-js";
 import { MAILBOXES, type Mailbox } from "../lib/mailboxes";
-import { labels } from "../lib/labels.build";
-import { getCurrentUser, getMailboxCounts } from "../lib/queries";
+import { getCurrentUser, getLabels, getMailboxCounts } from "../lib/queries";
 import { searchHref } from "../lib/search";
 import {
   ArchiveIcon,
@@ -11,7 +10,7 @@ import {
   SendIcon,
   StarIcon,
 } from "./icons";
-import { CurrentUserCardSkeleton } from "./skeletons";
+import { CurrentUserCardSkeleton, LabelNavSkeleton } from "./skeletons";
 import { ComposeButton } from "./compose";
 import { SolidBadge, UserAvatar } from "./ui";
 
@@ -39,6 +38,7 @@ export function MailSidebar() {
  *  (small screens have the floating Compose button instead). */
 export function MailSidebarContent(props: { drawer?: boolean }) {
   const mailboxCounts = createMemo(() => getMailboxCounts(), { name: "mailboxCounts" });
+  const labels = createMemo(() => getLabels(), { name: "labels" });
   const currentUser = createMemo(() => getCurrentUser(), {
     name: "currentUser",
   });
@@ -96,21 +96,24 @@ export function MailSidebarContent(props: { drawer?: boolean }) {
           <p class="text-gray flex h-9 items-center px-3 text-sm font-semibold tracking-tight">
             Labels
           </p>
-          <For each={labels}>
-            {(label) => (
-              <a
-                class="hover:bg-card flex h-9 items-center gap-3 rounded-lg px-3 text-sm tracking-tight transition-colors"
-                href={searchHref(label.name)}
-              >
-                <span
-                  aria-hidden="true"
-                  class="size-2.5 shrink-0 rounded-full"
-                  style={{ "background-color": label.color }}
-                />
-                {label.name}
-              </a>
-            )}
-          </For>
+          <Loading fallback={<LabelNavSkeleton />}>
+            {/* Revalidation refetches fresh label objects; key by id so the rows survive it. */}
+            <For each={labels()} keyed={(label) => label.id}>
+              {(label) => (
+                <a
+                  class="hover:bg-card flex h-9 items-center gap-3 rounded-lg px-3 text-sm tracking-tight transition-colors"
+                  href={searchHref(label().name)}
+                >
+                  <span
+                    aria-hidden="true"
+                    class="size-2.5 shrink-0 rounded-full"
+                    style={{ "background-color": label().color }}
+                  />
+                  {label().name}
+                </a>
+              )}
+            </For>
+          </Loading>
         </nav>
 
         <div class="mt-auto flex flex-col gap-2">

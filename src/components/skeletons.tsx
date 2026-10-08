@@ -7,19 +7,6 @@ export function Skeleton(props: { class?: string }) {
   return <span aria-hidden="true" class={["skeleton-animation block", props.class]} />;
 }
 
-export function LabelNavSkeleton() {
-  return (
-    <For each={range(4)}>
-      {() => (
-        <div aria-hidden="true" class="flex h-9 items-center gap-3 px-3">
-          <Skeleton class="size-2.5 rounded-full" />
-          <Skeleton class="h-3 w-20" />
-        </div>
-      )}
-    </For>
-  );
-}
-
 export function CurrentUserCardSkeleton() {
   return (
     <div aria-hidden="true" class="flex h-12 items-center gap-2.5 px-2">

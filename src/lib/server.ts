@@ -1,6 +1,7 @@
 import "server-only";
 import { getRequestEvent, parseCookieHeader } from "@solidjs/web";
-import type { Label, Message, MutationResult, Person, Thread, ThreadListItem, User } from "./types";
+import { labels } from "./labels.build";
+import type { Message, MutationResult, Person, Thread, ThreadListItem, User } from "./types";
 
 // Server-only data layer. Static placeholder content for now — swap for a real database later.
 
@@ -17,15 +18,6 @@ export async function delay(ms = 1000) {
   if (!isDelaysEnabled()) return;
   await new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
-
-export const labels: Label[] = [
-  { id: "design", name: "Design", color: "#8b5cf6" },
-  { id: "engineering", name: "Engineering", color: "#1b50ff" },
-  { id: "hiring", name: "Hiring", color: "#38bdf8" },
-  { id: "infra", name: "Infra", color: "#6366f1" },
-  { id: "launch", name: "Launch", color: "#ec4899" },
-  { id: "social", name: "Social", color: "#f472b6" },
-];
 
 const label = (id: string) => labels.find((l) => l.id === id)!;
 

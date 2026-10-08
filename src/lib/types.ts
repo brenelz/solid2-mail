@@ -23,16 +23,27 @@ export type ThreadListItem = {
   labels: Label[];
 };
 
+export type Person = { name: string; email: string };
+
+export type Message = {
+  id: string;
+  from: Person;
+  to: Person[];
+  /** Display date, e.g. "Tue, 29 Sept 2026, 02:41". */
+  date: string;
+  paragraphs: string[];
+};
+
 export type Thread = {
   id: string;
   subject: string;
   labels: Label[];
   starred: boolean;
-  messageCount: number;
-  from: { name: string; email: string };
-  to: string;
-  /** First name the reply box addresses: the sender, or the recipient when you sent it. */
+  /** First name the reply box addresses: the other side of the conversation. */
   replyTo: string;
-  date: string;
-  paragraphs: string[];
+  /** Oldest first. */
+  messages: Message[];
 };
+
+/** What the mutations return: the client interprets it (error text under the form, closing the panel, …). */
+export type MutationResult = { ok: true; threadId: string } | { ok: false; error: string };

@@ -35,10 +35,16 @@ declare module "virtual:file-routes" {
   /** The flat route manifest, in scan order. */
   const routes: readonly [
     {
-      path: "/(mail)";
+      path: "/(mail)/search/:threadId";
       page: true;
-      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)")>;
-      $$route?: undefined;
+      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/search/[threadId]")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/search/[threadId]")>;
+    },
+    {
+      path: "/(mail)/search/";
+      page: true;
+      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/search/index")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/search/index")>;
     },
     {
       path: "/*404";
@@ -59,22 +65,16 @@ declare module "virtual:file-routes" {
       $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/[mailbox]/[threadId]")>;
     },
     {
+      path: "/(mail)";
+      page: true;
+      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)")>;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)")>;
+    },
+    {
       path: "/(mail)/:mailbox/";
       page: true;
       $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/[mailbox]/index")>;
       $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/[mailbox]/index")>;
-    },
-    {
-      path: "/(mail)/search/";
-      page: true;
-      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/search/index")>;
-      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/search/index")>;
-    },
-    {
-      path: "/(mail)/search/:threadId";
-      page: true;
-      $component: FileRouteLazyRef<typeof import("./src/routes/(mail)/search/[threadId]")>;
-      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)/search/[threadId]")>;
     }
   ];
   export default routes;
@@ -102,7 +102,7 @@ declare module "virtual:file-routes" {
       id: "/(mail)";
       page: true;
       $component: FileRouteLazyRef<typeof import("./src/routes/(mail)")>;
-      $$route?: undefined;
+      $$route: FileRouteEagerRef<typeof import("./src/routes/(mail)")>;
       children: readonly [
         {
           path: "/search/";

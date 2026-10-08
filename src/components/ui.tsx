@@ -68,3 +68,15 @@ export function RowButton(props: {
     </button>
   );
 }
+
+/** Text field styling shared by the reply box and the compose panel. */
+export const fieldClass =
+  "border-divider placeholder-gray focus:border-accent focus:ring-accent/25 bg-card w-full rounded-md border px-3 text-sm text-white transition-colors focus:ring-2 focus:outline-none";
+
+/** ⌘/Ctrl+Enter submits the surrounding form (through its action, so busy state and validation still apply). */
+export function submitOnCommandEnter(event: KeyboardEvent & { currentTarget: HTMLTextAreaElement }) {
+  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+    event.preventDefault();
+    event.currentTarget.form?.requestSubmit();
+  }
+}

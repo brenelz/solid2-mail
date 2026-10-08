@@ -6,11 +6,11 @@ import {
   ArchiveIcon,
   ChevronsUpDownIcon,
   InboxIcon,
-  PenLineIcon,
   SendIcon,
   StarIcon,
 } from "./icons";
 import { CurrentUserCardSkeleton, LabelNavSkeleton } from "./skeletons";
+import { ComposeButton } from "./compose";
 import { UserAvatar } from "./ui";
 
 const mailboxIcons: Record<Mailbox, typeof InboxIcon> = {
@@ -35,12 +35,7 @@ export function MailSidebar() {
     <aside class="hidden w-60 shrink-0 md:flex">
       <div class="flex min-h-0 flex-1 flex-col gap-6 px-3 pt-1 pb-3">
         <div class="px-1">
-          <button
-            class="bg-accent hover:bg-accent-hover inline-flex h-9 w-full items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold whitespace-nowrap text-white transition-colors"
-            type="button"
-          >
-            <PenLineIcon class="size-4" /> Compose
-          </button>
+          <ComposeButton variant="sidebar" />
         </div>
 
         <nav aria-label="Mailboxes" class="flex flex-col gap-0.5">
@@ -80,18 +75,19 @@ export function MailSidebar() {
             Labels
           </p>
           <Loading fallback={<LabelNavSkeleton />}>
-            <For each={labels()}>
+            {/* Revalidation refetches fresh label objects; key by id so the rows survive it. */}
+            <For each={labels()} keyed={(label) => label.id}>
               {(label) => (
                 <a
                   class="hover:bg-card flex h-9 items-center gap-3 rounded-lg px-3 text-sm tracking-tight transition-colors"
-                  href={searchHref(label.name)}
+                  href={searchHref(label().name)}
                 >
                   <span
                     aria-hidden="true"
                     class="size-2.5 shrink-0 rounded-full"
-                    style={{ "background-color": label.color }}
+                    style={{ "background-color": label().color }}
                   />
-                  {label.name}
+                  {label().name}
                 </a>
               )}
             </For>

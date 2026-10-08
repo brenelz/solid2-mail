@@ -6,9 +6,14 @@ import { getThread } from "../../../lib/queries";
 
 export const route = defineFileRoute("/:mailbox/:threadId", {
   matchFilters: { mailbox: MAILBOX_IDS },
-  preload: ({ params }) => getThread(params.threadId),
+  preload: ({ params }) => [void getThread(params.threadId)],
 });
 
 export default function ThreadPage(props: RouteProps<typeof route>) {
-  return <ThreadView backHref={`/${props.params.mailbox}`} threadId={props.params.threadId} />;
+  return (
+    <ThreadView
+      backHref={`/${props.params.mailbox}`}
+      threadId={props.params.threadId}
+    />
+  );
 }

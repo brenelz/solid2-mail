@@ -1,7 +1,9 @@
 import { Title } from "@solidjs/meta";
 import { createMemo, For, Loading, Show } from "solid-js";
 import { getThread } from "../lib/queries";
-import { ArchiveIcon, ArrowLeftIcon, SendIcon, StarIcon } from "./icons";
+import type { Message } from "../lib/types";
+import { ArchiveIcon, ArrowLeftIcon, StarIcon } from "./icons";
+import { ReplyForm } from "./reply-form";
 import { ThreadPageSkeleton } from "./skeletons";
 import { iconButtonClass, LabelChip, UserAvatar } from "./ui";
 
@@ -54,86 +56,55 @@ export function ThreadView(props: { threadId: string; backHref: string }) {
                 <StarIcon class="size-4" filled={t().starred} />
               </button>
               <span class="text-gray ml-auto text-xs tabular-nums">
-                {t().messageCount === 1
-                  ? "1 message"
-                  : `${t().messageCount} messages`}
+                {t().messages.length === 1 ? "1 message" : `${t().messages.length} messages`}
               </span>
             </div>
 
             <article class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 pb-24 sm:px-8">
               <div class="mx-auto w-full max-w-4xl">
-                <header>
-                  <div class="flex flex-wrap items-center gap-x-3 gap-y-2 pt-4">
-                    <h1 class="text-xl leading-7 font-semibold sm:text-2xl sm:leading-8">
-                      {t().subject}
-                    </h1>
-                    <For each={t().labels}>
-                      {(label) => <LabelChip label={label} size="md" />}
-                    </For>
-                  </div>
-                  <div class="mt-6 flex h-11 items-center gap-3">
-                    <UserAvatar name={t().from.name} size="lg" />
-                    <div class="min-w-0 flex-1">
-                      <p class="flex h-5 items-baseline gap-1.5 text-sm">
-                        <span class="truncate font-semibold tracking-tight">
-                          {t().from.name}
-                        </span>
-                        <span class="text-gray hidden truncate text-[13px] sm:inline">
-                          {t().from.email}
-                        </span>
-                      </p>
-                      <p class="text-gray flex h-5 items-center truncate text-[13px]">
-                        to {t().to}
-                      </p>
-                    </div>
-                    <time class="text-gray shrink-0 text-xs tabular-nums">
-                      {t().date}
-                    </time>
-                  </div>
+                <header class="flex flex-wrap items-center gap-x-3 gap-y-2 pt-4">
+                  <h1 class="text-xl leading-7 font-semibold sm:text-2xl sm:leading-8">{t().subject}</h1>
+                  <For each={t().labels}>{(label) => <LabelChip label={label} size="md" />}</For>
                 </header>
 
-                <div class="mt-5 min-h-48">
-                  <div class="flex max-w-[68ch] flex-col gap-4 text-[15px] leading-[1.65] text-white/85">
-                    <For each={t().paragraphs}>
-                      {(paragraph) => <p>{paragraph}</p>}
-                    </For>
-                  </div>
-                </div>
+                <ol class="mt-6 flex flex-col">
+                  <For each={t().messages}>
+                    {(message) => (
+                      <li class="border-divider/70 border-t pt-6 pb-8 first:border-t-0 first:pt-0 last:pb-0">
+                        <MessageView message={message} />
+                      </li>
+                    )}
+                  </For>
+                </ol>
 
-                <form class="mt-8 flex flex-col gap-3">
-                  <label class="sr-only" for="reply">
-                    Reply
-                  </label>
-                  <textarea
-                    class="border-divider placeholder-gray focus:border-accent focus:ring-accent/25 bg-card min-h-24 w-full resize-y rounded-md border px-3 py-2 text-sm leading-relaxed text-white transition-colors focus:ring-2 focus:outline-none"
-                    id="reply"
-                    name="body"
-                    placeholder={`Reply to ${t().replyTo}…`}
-                  />
-                  <div class="flex justify-end">
-                    <span class="text-gray flex shrink-0 gap-2 pr-1 text-xs">
-                      <button class="hover:text-white" type="button">
-                        Cc
-                      </button>
-                      <button class="hover:text-white" type="button">
-                        Bcc
-                      </button>
-                    </span>
-                  </div>
-                  <div class="flex items-center justify-end gap-3">
-                    <button
-                      class="bg-accent hover:bg-accent-hover inline-flex h-9 w-24 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold text-white transition-colors"
-                      type="button"
-                    >
-                      <SendIcon class="size-3.5" /> Send
-                    </button>
-                  </div>
-                </form>
+                <ReplyForm messageCount={t().messages.length} replyTo={t().replyTo} threadId={t().id} />
               </div>
             </article>
           </div>
         )}
       </Show>
     </Loading>
+  );
+}
+
+function MessageView(props: { message: Message }) {
+  const to = () => props.message.to.map((person) => person.name.split(" ")[0]).join(", ");
+  return (
+    <article>
+      <div class="flex h-11 items-center gap-3">
+        <UserAvatar name={props.message.from.name} size="lg" />
+        <div class="min-w-0 flex-1">
+          <p class="flex h-5 items-baseline gap-1.5 text-sm">
+            <span class="truncate font-semibold tracking-tight">{props.message.from.name}</span>
+            <span class="text-gray hidden truncate text-[13px] sm:inline">{props.message.from.email}</span>
+          </p>
+          <p class="text-gray flex h-5 items-center truncate text-[13px]">to {to()}</p>
+        </div>
+        <time class="text-gray shrink-0 text-xs tabular-nums">{props.message.date}</time>
+      </div>
+      <div class="mt-4 flex max-w-[68ch] flex-col gap-4 text-[15px] leading-[1.65] text-white/85">
+        <For each={props.message.paragraphs}>{(paragraph) => <p>{paragraph}</p>}</For>
+      </div>
+    </article>
   );
 }

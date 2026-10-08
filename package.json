@@ -26,9 +26,9 @@
   },
   "dependencies": {
     "@solidjs/meta": "1.0.0-next.2",
-    "@solidjs/router": "2.0.0-next.35",
-    "@solidjs/web": "2.0.0-rc.13",
-    "solid-js": "2.0.0-rc.13",
+    "@solidjs/router": "2.0.0-next.36",
+    "@solidjs/web": "https://pkg.pr.new/mizulu/solid2/@solidjs/web@bc51ada",
+    "solid-js": "https://pkg.pr.new/mizulu/solid2/solid-js@bc51ada",
     "valibot": "^1.5.0"
   }
 }

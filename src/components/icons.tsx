@@ -217,3 +217,16 @@ export const TimerOffIcon = (props: IconProps) => (
     <path d="M12 12v-2" />
   </Icon>
 );
+
+export const XIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </Icon>
+);
+
+export const MinusIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M5 12h14" />
+  </Icon>
+);

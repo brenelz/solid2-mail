@@ -34,17 +34,22 @@ export type Message = {
   paragraphs: string[];
 };
 
-export type Thread = {
+/** Everything about a thread except message bodies: the toolbar, the header and the latest sender row. */
+export type ThreadSummary = {
   id: string;
   subject: string;
   labels: Label[];
   starred: boolean;
   read: boolean;
   mailbox: ThreadLocation;
+  messageCount: number;
+  latest: Pick<Message, "from" | "to" | "date">;
+};
+
+export type LatestMessage = {
+  message: Message;
   /** First name the reply box addresses: the other side of the conversation. */
   replyTo: string;
-  /** Oldest first. */
-  messages: Message[];
 };
 
 /** What the mutations return: the client interprets it (error text under the form, closing the panel, …). */

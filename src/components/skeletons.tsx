@@ -67,37 +67,59 @@ export function ThreadRowsSkeleton(props: { count?: number }) {
   );
 }
 
-export function ThreadPageSkeleton() {
+export function ThreadToolbarSkeleton() {
   return (
-    <div aria-hidden="true" class="flex h-full flex-col">
-      <div class="border-divider/70 flex h-14 shrink-0 items-center gap-1 border-b bg-black px-3 sm:px-6">
-        <Skeleton class="size-9 rounded-full" />
-        <span class="bg-divider mx-1 h-5 w-px" />
-        <Skeleton class="size-9 rounded-full" />
-        <Skeleton class="size-9 rounded-full" />
+    <div aria-hidden="true" class="border-divider/70 flex h-14 shrink-0 items-center gap-1 border-b bg-black px-3 sm:px-6">
+      <Skeleton class="size-9 rounded-full" />
+      <span class="bg-divider mx-1 h-5 w-px" />
+      <Skeleton class="size-9 rounded-full" />
+      <Skeleton class="size-9 rounded-full" />
+    </div>
+  );
+}
+
+export function SenderRowSkeleton() {
+  return (
+    <div aria-hidden="true" class="flex h-11 items-center gap-3">
+      <Skeleton class="size-10 rounded-full" />
+      <div class="flex flex-col gap-2">
+        <Skeleton class="h-4 w-36" />
+        <Skeleton class="h-3.5 w-24" />
       </div>
-      <div class="min-h-0 flex-1 overflow-hidden px-5 pb-24 sm:px-8">
-        <div class="mx-auto w-full max-w-4xl">
-          <div class="pt-4">
-            <div class="flex h-7 items-center sm:h-8">
-              <Skeleton class="h-6 w-3/5 max-w-xl" />
-            </div>
-          </div>
-          <div class="mt-6 flex h-11 items-center gap-3">
-            <Skeleton class="size-10 rounded-full" />
-            <div class="flex flex-col gap-2">
-              <Skeleton class="h-4 w-36" />
-              <Skeleton class="h-3.5 w-24" />
-            </div>
-          </div>
-          <div class="mt-5 flex min-h-48 max-w-[68ch] flex-col gap-3 pt-1">
-            <Skeleton class="h-4 w-full" />
-            <Skeleton class="h-4 w-11/12" />
-            <Skeleton class="h-4 w-4/5" />
-            <Skeleton class="h-4 w-2/3" />
-          </div>
+    </div>
+  );
+}
+
+export function ThreadHeaderSkeleton() {
+  return (
+    <div aria-hidden="true">
+      <div class="pt-4">
+        <div class="flex h-7 items-center sm:h-8">
+          <Skeleton class="h-6 w-3/5 max-w-xl" />
         </div>
       </div>
+      <div class="mt-6">
+        <SenderRowSkeleton />
+      </div>
+    </div>
+  );
+}
+
+export function LatestMessageSkeleton() {
+  return (
+    <div aria-hidden="true" class="flex min-h-48 max-w-[68ch] flex-col gap-3 pt-1">
+      <Skeleton class="h-4 w-full" />
+      <Skeleton class="h-4 w-11/12" />
+      <Skeleton class="h-4 w-4/5" />
+      <Skeleton class="h-4 w-2/3" />
+    </div>
+  );
+}
+
+export function EarlierMessagesSkeleton() {
+  return (
+    <div aria-hidden="true" class="border-divider/70 mt-10 border-t pt-8">
+      <SenderRowSkeleton />
     </div>
   );
 }

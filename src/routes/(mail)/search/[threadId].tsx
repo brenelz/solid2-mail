@@ -5,7 +5,7 @@ import { preloadThread } from "../../../lib/queries";
 import { searchHref, searchQuery } from "../../../lib/search";
 
 export const route = defineFileRoute("/search/:threadId", {
-  preload: ({ params, intent }) => preloadThread(params.threadId, intent),
+  preload: ({ params }) => preloadThread(params.threadId),
 });
 
 // Back returns to the same search (`?q=` rides along on the thread URL).

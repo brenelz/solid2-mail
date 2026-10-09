@@ -111,9 +111,10 @@ export function ThreadList(props: {
       }
     >
       <ul aria-label="Conversations" class="flex flex-col">
-        <For each={props.threads}>
+        {/* Revalidation returns fresh thread objects; key by id so rows (and their buttons) survive it. */}
+        <For each={props.threads} keyed={(thread) => thread.id}>
           {(thread) => (
-            <ThreadRow href={props.hrefFor(thread.id)} thread={thread} />
+            <ThreadRow href={props.hrefFor(thread().id)} thread={thread()} />
           )}
         </For>
       </ul>
@@ -247,9 +248,9 @@ function ThreadRow(props: { href: string; thread: ThreadListItem }) {
           {props.thread.subject}
         </div>
         <div class="flex h-5 items-center gap-2">
-          <For each={props.thread.labels}>
+          <For each={props.thread.labels} keyed={(label) => label.id}>
             {(label) => (
-              <LabelChip class="hidden xl:inline-flex" label={label} />
+              <LabelChip class="hidden xl:inline-flex" label={label()} />
             )}
           </For>
           <Show when={props.thread.hasAttachments}>

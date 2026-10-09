@@ -38,7 +38,8 @@ export function ThreadView(props: { threadId: string; backHref: string }) {
   return (
     <div class="flex h-full flex-col">
       <Loading fallback={<ThreadToolbarSkeleton />}>
-        <Show when={summary()}>{(t) => <ThreadToolbar backHref={props.backHref} thread={t()} />}</Show>
+        {/* No Show around the toolbar: in production builds a Show here rebuilt it on every action. */}
+        <ThreadToolbar backHref={props.backHref} thread={summary()} />
       </Loading>
 
       <article class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 pb-24 sm:px-8">
@@ -54,7 +55,9 @@ export function ThreadView(props: { threadId: string; backHref: string }) {
                   <header>
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-2 pt-4">
                       <h1 class="text-xl leading-7 font-semibold sm:text-2xl sm:leading-8">{t().subject}</h1>
-                      <For each={t().labels}>{(label) => <LabelChip label={label} size="md" />}</For>
+                      <For each={t().labels} keyed={(label) => label.id}>
+                        {(label) => <LabelChip label={label()} size="md" />}
+                      </For>
                     </div>
                     <div class="mt-6">
                       <SenderRow message={t().latest} />
@@ -98,13 +101,13 @@ function EarlierMessagesView(props: { threadId: string }) {
   return (
     <Show when={earlier().length > 0}>
       <ol class="border-divider/70 mt-10 flex flex-col gap-8 border-t pt-8">
-        <For each={earlier()}>
+        <For each={earlier()} keyed={(message) => message.id}>
           {(message) => (
             <li class="border-divider/70 border-b pb-8 last:border-b-0 last:pb-0">
               <article>
-                <SenderRow message={message} />
+                <SenderRow message={message()} />
                 <div class="mt-4">
-                  <MessageText paragraphs={message.paragraphs} />
+                  <MessageText paragraphs={message().paragraphs} />
                 </div>
               </article>
             </li>
@@ -140,15 +143,15 @@ function MessageText(props: { paragraphs: string[] }) {
   );
 }
 
-/** Back, Archive / Move to inbox and Star for the open thread. */
-function ThreadToolbar(props: { thread: ThreadSummary; backHref: string }) {
+/** Back, Archive / Move to inbox and Star for the open thread. A missing thread shows only Back. */
+function ThreadToolbar(props: { thread: ThreadSummary | undefined; backHref: string }) {
   const move = useAction(moveThreads);
   const star = useAction(starThreads);
 
   // Optimistic like the list rows: star and archive flip on submit and fall back to the server's values once saved.
-  const [starred, setStarred] = createOptimistic(() => props.thread.starred);
-  const [mailbox, setMailbox] = createOptimistic(() => props.thread.mailbox);
-  const isThisThread = (ids: string[]) => ids.includes(props.thread.id);
+  const [starred, setStarred] = createOptimistic(() => props.thread?.starred ?? false);
+  const [mailbox, setMailbox] = createOptimistic(() => props.thread?.mailbox);
+  const isThisThread = (ids: string[]) => !!props.thread && ids.includes(props.thread.id);
   // eslint-disable-next-line solid/reactivity -- action hooks are event-like: read the thread id at submit time
   starThreads.onSubmit((ids, value) => {
     if (isThisThread(ids)) setStarred(value);
@@ -169,13 +172,13 @@ function ThreadToolbar(props: { thread: ThreadSummary; backHref: string }) {
       >
         <ArrowLeftIcon class="size-5" />
       </a>
-      <span class="bg-divider mx-1 h-5 w-px" />
+      <span class="bg-divider mx-1 h-5 w-px" hidden={!props.thread} />
       {/* Sent threads have nowhere to be archived from (same rule as the list rows). */}
-      <Show when={props.thread.mailbox !== "sent"}>
+      <Show when={props.thread && props.thread.mailbox !== "sent"}>
         <button
           aria-label={archived() ? "Move to inbox" : "Archive"}
           class={iconButtonClass}
-          onClick={() => void move([props.thread.id], archived() ? "inbox" : "archive")}
+          onClick={() => void move([props.thread!.id], archived() ? "inbox" : "archive")}
           title={archived() ? "Move to inbox" : "Archive"}
           type="button"
         >
@@ -186,19 +189,20 @@ function ThreadToolbar(props: { thread: ThreadSummary; backHref: string }) {
       </Show>
       <button
         aria-label={starred() ? "Remove star" : "Star"}
+        hidden={!props.thread}
         aria-pressed={starred() ? "true" : "false"}
         class={[
           "hover:bg-card inline-flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
           starred() ? "text-accent" : "text-muted hover:text-white",
         ]}
-        onClick={() => void star([props.thread.id], !starred())}
+        onClick={() => void star([props.thread!.id], !starred())}
         title={starred() ? "Remove star" : "Star"}
         type="button"
       >
         <StarIcon class="size-4" filled={starred()} />
       </button>
       <span class="text-gray ml-auto text-xs tabular-nums">
-        {props.thread.messageCount === 1 ? "1 message" : `${props.thread.messageCount} messages`}
+        {props.thread && (props.thread.messageCount === 1 ? "1 message" : `${props.thread.messageCount} messages`)}
       </span>
     </div>
   );

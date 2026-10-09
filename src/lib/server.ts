@@ -1,15 +1,24 @@
 import "server-only";
 import { getRequestEvent, parseCookieHeader } from "@solidjs/web";
-import type { Label, Message, MutationResult, Person, Thread, ThreadListItem, User } from "./types";
+import type {
+  Label,
+  LatestMessage,
+  Message,
+  MutationResult,
+  Person,
+  ThreadListItem,
+  ThreadSummary,
+  User,
+} from "./types";
 
 // Server-only data layer. Static placeholder content for now — swap for a real database later.
 
-/** Demo toggle: delays are on unless this cookie is "0". Flipped from the demo toolbar. */
+/** Demo toggle: delays are off unless this cookie is "1". Flipped from the demo toolbar. */
 export const DELAYS_COOKIE = "stamp-delays";
 
 export function isDelaysEnabled() {
   const cookie = getRequestEvent()?.request.headers.get("cookie");
-  return parseCookieHeader(cookie)[DELAYS_COOKIE] !== "0";
+  return parseCookieHeader(cookie)[DELAYS_COOKIE] === "1";
 }
 
 /** Fake network/database latency so loading states are visible. Skipped when delays are toggled off. */
@@ -206,10 +215,10 @@ function counterpart(messages: Message[]): Person[] {
   return messages.at(-1)?.to ?? [];
 }
 
-export function getThreadDetail(id: string): Thread | undefined {
+export function getThreadSummary(id: string): ThreadSummary | undefined {
   const item = threads.find((t) => t.id === id);
-  const messages = messagesByThread.get(id);
-  if (!item || !messages) return undefined;
+  const latest = messagesByThread.get(id)?.at(-1);
+  if (!item || !latest) return undefined;
   return {
     id: item.id,
     subject: item.subject,
@@ -217,9 +226,21 @@ export function getThreadDetail(id: string): Thread | undefined {
     starred: item.starred,
     read: item.read,
     mailbox: item.mailbox,
-    replyTo: counterpart(messages).map(firstName).join(", ") || firstName(me),
-    messages,
+    messageCount: messagesByThread.get(id)!.length,
+    latest: { from: latest.from, to: latest.to, date: latest.date },
   };
+}
+
+export function getLatestMessage(id: string): LatestMessage | undefined {
+  const messages = messagesByThread.get(id);
+  const message = messages?.at(-1);
+  if (!messages || !message) return undefined;
+  return { message, replyTo: counterpart(messages).map(firstName).join(", ") || firstName(me) };
+}
+
+/** Every message but the latest, newest first. */
+export function getEarlierMessages(id: string): Message[] {
+  return (messagesByThread.get(id) ?? []).slice(0, -1).reverse();
 }
 
 // --- Mutations (in memory: a dev-server restart resets them)

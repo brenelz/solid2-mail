@@ -1,6 +1,6 @@
 import { Title } from "@solidjs/meta";
 import { useAction } from "@solidjs/router";
-import { createEffect, createMemo, createOptimistic, For, Loading, Show } from "solid-js";
+import { createEffect, createMemo, createOptimistic, createProjection, For, Loading, Show } from "solid-js";
 import { markThreadsRead, moveThreads, starThreads } from "../lib/mutations";
 import { getEarlierMessages, getLatestMessage, getThreadSummary } from "../lib/queries";
 import type { Message, ThreadSummary } from "../lib/types";
@@ -18,7 +18,13 @@ import { iconButtonClass, LabelChip, UserAvatar } from "./ui";
  *  It streams in stages like the original: toolbar and header from the summary, then the latest message
  *  with the reply form, then the earlier messages below it. */
 export function ThreadView(props: { threadId: string; backHref: string }) {
-  const summary = createMemo(() => getThreadSummary(props.threadId), { name: "threadSummary" });
+  // A projection keeps the same thread object (and label chips) across revalidations, so actions update it in place.
+  const data = createProjection(
+    async () => ({ thread: await getThreadSummary(props.threadId) }),
+    {} as { thread?: ThreadSummary },
+    { key: "id", name: "threadSummary" },
+  );
+  const summary = () => data.thread;
 
   // Opening an unread thread marks it read (like the original). Done here rather than in a query, which
   // also runs from preloads (hover/prefetch) and must not mark anything. The action's revalidation refreshes
@@ -94,11 +100,14 @@ function LatestMessageView(props: { threadId: string; messageCount: number }) {
 
 /** Newest first, under the reply form. */
 function EarlierMessagesView(props: { threadId: string }) {
-  const earlier = createMemo(() => getEarlierMessages(props.threadId), { name: "earlierMessages" });
+  const earlier = createProjection(() => getEarlierMessages(props.threadId), [] as Message[], {
+    key: "id",
+    name: "earlierMessages",
+  });
   return (
-    <Show when={earlier().length > 0}>
+    <Show when={earlier.length > 0}>
       <ol class="border-divider/70 mt-10 flex flex-col gap-8 border-t pt-8">
-        <For each={earlier()}>
+        <For each={earlier}>
           {(message) => (
             <li class="border-divider/70 border-b pb-8 last:border-b-0 last:pb-0">
               <article>

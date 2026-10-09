@@ -1,0 +1,213 @@
+diff --git a/dist/dev-shared.js b/dist/dev-shared.js
+index d165d176b67fb927b6d979a332a2dd69096c8427..077d60b2d2be3a788e4d84b7b035d6bc14401939 100644
+--- a/dist/dev-shared.js
++++ b/dist/dev-shared.js
+@@ -196,6 +196,7 @@ const CONFIG_GUESS = 1 << 13;
+  * link does, A30). Set at the window, never cleared: a reader that stopped
+  * asking re-derives once and goes pending through its own read. */
+ const CONFIG_VERDICT = 1 << 14;
++const CONFIG_VERDICT_REDERIVE = 1 << 19;
+ /** A dependency's status is a question for this node's pass, not a fact
+  * about its current one: the propagation re-derives it instead of marking
+  * it, for errors as for pending (as CONFIG_VERDICT). A boundary's output
+@@ -1630,7 +1631,7 @@ class GlobalQueue {
+       for (let i = 0; i < zombies.length; i++)
+         if (
+           (zombies[i]._flags & (REACTIVE_DISPOSED | REACTIVE_ZOMBIE)) === REACTIVE_ZOMBIE &&
+-          zombies[i]._config & CONFIG_VERDICT
++          zombies[i]._config & CONFIG_VERDICT_REDERIVE
+         )
+           recompute(zombies[i]);
+       // The unchanged passes' tails stay linked (A30, #3469): their inputs
+@@ -2912,7 +2913,7 @@ function settlePendingSource(el, source = el) {
+       // when the source went pending, `propagateStatus`), and a landing
+       // equal to the committed value notifies nobody — the source settling
+       // is its verdict changing: it runs again.
+-      return node._config & CONFIG_VERDICT && enqueueSub(node);
++      return node._config & CONFIG_VERDICT_REDERIVE && enqueueSub(node);
+     visited.add(node);
+     node._time = clock;
+     const remaining = node._x?._pendingSources?.values().next().value;
+@@ -3468,7 +3469,8 @@ function propagateStatus(el, status, error, downstreamBlockStatus) {
+     // output (CONFIG_REDERIVE, boundaries.ts) the same: content or fallback
+     // is its pass's call.
+     if (
+-      sub._config & (CONFIG_REDERIVE | CONFIG_VERDICT) ||
++      sub._config & (CONFIG_REDERIVE | CONFIG_VERDICT_REDERIVE) ||
++      (status !== STATUS_PENDING && sub._config & CONFIG_VERDICT) ||
+       (status === STATUS_PENDING && link._gen !== sub._depGen)
+     ) {
+       enqueueSub(sub);
+@@ -3750,6 +3752,7 @@ function recompute(el, create = false) {
+   // live writes until the commit that disposes it, so every per-pass wipe
+   // — here, the finally below, updateIfNecessary — carries it (#3543).
+   el._flags = REACTIVE_RECOMPUTING_DEPS | (el._flags & REACTIVE_ZOMBIE);
++  el._config &= ~CONFIG_VERDICT_REDERIVE;
+   el._time = clock;
+   // The pass's previous value: its staging, else the lane's value for a
+   // lane's node (lanes.ts), else the committed one.
+@@ -3836,7 +3839,7 @@ function recompute(el, create = false) {
+     joined = (el._flags & REACTIVE_JOINED) !== 0;
+     // A verdict reader is one for as long as it probes: a pass that entered
+     // no window (REACTIVE_PROBED) is an ordinary derivation again.
+-    if (!(el._flags & REACTIVE_PROBED)) el._config &= ~CONFIG_VERDICT;
++    if (!(el._flags & REACTIVE_PROBED)) el._config &= ~(CONFIG_VERDICT | CONFIG_VERDICT_REDERIVE);
+     // REACTIVE_DISPOSED survives too (#3621): the pass may have disposed its
+     // own owner (a memo calling its root's `dispose()`, a cleanup doing so
+     // #3601/#3606), and `disposeChildren` set the flag on this node
+diff --git a/dist/dev.js b/dist/dev.js
+index f9df5c88804295c7e3d56c8ac31a728be95c50a8..5572977a6eff28ddf87cd5e69413ea0d74ce53e7 100644
+--- a/dist/dev.js
++++ b/dist/dev.js
+@@ -1073,7 +1073,7 @@ function markVerdictReader(window) {
+   let c = context;
+   if (c?._root) c = c._parentComputed;
+   if (c !== null) {
+-    c._config |= CONFIG_VERDICT;
++    c._config |= tracking ? CONFIG_VERDICT | (1 << 19) : CONFIG_VERDICT;
+     c._flags |= REACTIVE_PROBED;
+     // Observe tier: which windows this pass entered (1 `isPending`, 2
+     // `latest`) — the hold census names the affordance (attribution.ts).
+@@ -7969,7 +7969,7 @@ function repoll(node, seen = new Set()) {
+     const sub = s._sub;
+     if (seen.has(sub)) continue;
+     seen.add(sub);
+-    if (sub._config & CONFIG_VERDICT) enqueueSub(sub);
++    if (sub._config & (1 << 19)) enqueueSub(sub);
+     if (!sub._type) repoll(sub, seen);
+   }
+ }
+diff --git a/dist/prod/affects.js b/dist/prod/affects.js
+index e262c78c8a1f8559961aeb747e4b6120a974c926..c5a556352a112f3e314e3c51563db36b0168df8c 100644
+--- a/dist/prod/affects.js
++++ b/dist/prod/affects.js
+@@ -1,4 +1,4 @@
+-import { $REFRESH, CONFIG_VERDICT, STATUS_PENDING, CONFIG_SLOT_NODE, STATUS_ERROR, REACTIVE_RECOMPUTING_DEPS } from "./core/constants.js";
++import { CONFIG_VERDICT_REDERIVE, $REFRESH, CONFIG_VERDICT, STATUS_PENDING, CONFIG_SLOT_NODE, STATUS_ERROR, REACTIVE_RECOMPUTING_DEPS } from "./core/constants.js";
+ 
+ import { ext } from "./core/core.js";
+ 
+@@ -40,7 +40,7 @@ let active = 0;
+         const e = n.o;
+         if (t.has(e)) continue;
+         t.add(e);
+-        if (e.u & CONFIG_VERDICT) enqueueSub(e);
++        if (e.u & CONFIG_VERDICT_REDERIVE) enqueueSub(e);
+         if (!e.i) repoll(e, t);
+     }
+ }
+diff --git a/dist/prod/core/async.js b/dist/prod/core/async.js
+index f765aef8914505ce8f12b41223bb8f231f6e34a1..58a4b90718e004254a2843abd9cbf787fc79a952 100644
+--- a/dist/prod/core/async.js
++++ b/dist/prod/core/async.js
+@@ -1,4 +1,4 @@
+-import { STATUS_UNINITIALIZED, STATUS_ERROR, STATUS_PENDING, CONFIG_GUESS, CONFIG_AUTO_DISPOSE, REACTIVE_DIRTY, NOT_PENDING, REACTIVE_DISPOSED, CONFIG_REDERIVE, CONFIG_VERDICT, CONFIG_HELD, CONFIG_OVERRIDE, REACTIVE_ZOMBIE } from "./constants.js";
++import { CONFIG_VERDICT_REDERIVE, STATUS_UNINITIALIZED, STATUS_ERROR, STATUS_PENDING, CONFIG_GUESS, CONFIG_AUTO_DISPOSE, REACTIVE_DIRTY, NOT_PENDING, REACTIVE_DISPOSED, CONFIG_REDERIVE, CONFIG_VERDICT, CONFIG_HELD, CONFIG_OVERRIDE, REACTIVE_ZOMBIE } from "./constants.js";
+ 
+ import { untrack, ext, context, statusNotifierOf, setSignal } from "./core.js";
+ 
+@@ -171,7 +171,7 @@ function settlePendingSource(e, t = e) {
+         // when the source went pending, `propagateStatus`), and a landing
+         // equal to the committed value notifies nobody — the source settling
+         // is its verdict changing: it runs again.
+-        return f.u & CONFIG_VERDICT && enqueueSub(f);
++        return f.u & CONFIG_VERDICT_REDERIVE && enqueueSub(f);
+         o.add(f);
+         f.Ne = clock;
+         const u = f.m?.Se?.values().next().value;
+@@ -646,7 +646,7 @@ function notifyStatus(e, t, n, r) {
+         // Inheriting the error would make a probe's reader errored. A boundary's
+         // output (CONFIG_REDERIVE, boundaries.ts) the same: content or fallback
+         // is its pass's call.
+-                if (r.u & (CONFIG_REDERIVE | CONFIG_VERDICT) || t === STATUS_PENDING && f.Ue !== r.Ge) {
++                if (r.u & (CONFIG_REDERIVE | CONFIG_VERDICT_REDERIVE) || t !== STATUS_PENDING && r.u & CONFIG_VERDICT || t === STATUS_PENDING && f.Ue !== r.Ge) {
+             enqueueSub(r);
+             schedule();
+             return;
+diff --git a/dist/prod/core/constants.js b/dist/prod/core/constants.js
+index fa200ab1aa61da18c379f71650b4a444e0acda8c..e2854db83d79f3bff9d29282ed01104177aa6af5 100644
+--- a/dist/prod/core/constants.js
++++ b/dist/prod/core/constants.js
+@@ -143,6 +143,7 @@ const CONFIG_SYNC = 1 << 6;
+  * propagation re-derives it instead of marking it pending (as a kept-tail
+  * link does, A30). Set at the window, never cleared: a reader that stopped
+  * asking re-derives once and goes pending through its own read. */ const CONFIG_VERDICT = 1 << 14;
++const CONFIG_VERDICT_REDERIVE = 1 << 19;
+ 
+ /** A dependency's status is a question for this node's pass, not a fact
+  * about its current one: the propagation re-derives it instead of marking
+@@ -209,4 +210,4 @@ const defaultContext = {};
+  * @internal
+  */ const $REFRESH = Symbol("refresh");
+ 
+-export { $REFRESH, CONFIG_AUTHORITATIVE, CONFIG_AUTO_DISPOSE, CONFIG_CHILDREN_FORBIDDEN, CONFIG_FRESH_READ, CONFIG_GUESS, CONFIG_HAS_SNAPSHOT, CONFIG_HELD, CONFIG_INPUTS_PUBLISHED, CONFIG_IN_SNAPSHOT_SCOPE, CONFIG_MANUAL_WRITE, CONFIG_NO_SNAPSHOT, CONFIG_OVERRIDE, CONFIG_OWNED_WRITE, CONFIG_PROMOTED, CONFIG_REDERIVE, CONFIG_SLOT_NODE, CONFIG_STAGED, CONFIG_SYNC, CONFIG_TRANSPARENT, CONFIG_VERDICT, EFFECT_RENDER, EFFECT_TRACKED, EFFECT_USER, NOT_PENDING, NO_SNAPSHOT, REACTIVE_CHECK, REACTIVE_DIRTY, REACTIVE_DISPOSED, REACTIVE_FRAME_READ, REACTIVE_IN_HEAP, REACTIVE_IN_HEAP_HEIGHT, REACTIVE_JOINED, REACTIVE_LANE_DIRTY, REACTIVE_LANE_READ, REACTIVE_LAZY, REACTIVE_MANUAL_WRITE, REACTIVE_MISSED_WAKE, REACTIVE_NONE, REACTIVE_PROBED, REACTIVE_PROBE_UNANSWERED, REACTIVE_REASK, REACTIVE_RECOMPUTING_DEPS, REACTIVE_SCREEN_READ, REACTIVE_SNAPSHOT_STALE, REACTIVE_STAGED_READ, REACTIVE_ZOMBIE, STATUS_ERROR, STATUS_PENDING, STATUS_UNINITIALIZED, SUPPORTS_PROXY, defaultContext };
+\ No newline at end of file
++export { $REFRESH, CONFIG_AUTHORITATIVE, CONFIG_AUTO_DISPOSE, CONFIG_CHILDREN_FORBIDDEN, CONFIG_FRESH_READ, CONFIG_GUESS, CONFIG_HAS_SNAPSHOT, CONFIG_HELD, CONFIG_INPUTS_PUBLISHED, CONFIG_IN_SNAPSHOT_SCOPE, CONFIG_MANUAL_WRITE, CONFIG_NO_SNAPSHOT, CONFIG_OVERRIDE, CONFIG_OWNED_WRITE, CONFIG_PROMOTED, CONFIG_REDERIVE, CONFIG_SLOT_NODE, CONFIG_STAGED, CONFIG_SYNC, CONFIG_TRANSPARENT, CONFIG_VERDICT, CONFIG_VERDICT_REDERIVE, EFFECT_RENDER, EFFECT_TRACKED, EFFECT_USER, NOT_PENDING, NO_SNAPSHOT, REACTIVE_CHECK, REACTIVE_DIRTY, REACTIVE_DISPOSED, REACTIVE_FRAME_READ, REACTIVE_IN_HEAP, REACTIVE_IN_HEAP_HEIGHT, REACTIVE_JOINED, REACTIVE_LANE_DIRTY, REACTIVE_LANE_READ, REACTIVE_LAZY, REACTIVE_MANUAL_WRITE, REACTIVE_MISSED_WAKE, REACTIVE_NONE, REACTIVE_PROBED, REACTIVE_PROBE_UNANSWERED, REACTIVE_REASK, REACTIVE_RECOMPUTING_DEPS, REACTIVE_SCREEN_READ, REACTIVE_SNAPSHOT_STALE, REACTIVE_STAGED_READ, REACTIVE_ZOMBIE, STATUS_ERROR, STATUS_PENDING, STATUS_UNINITIALIZED, SUPPORTS_PROXY, defaultContext };
+\ No newline at end of file
+diff --git a/dist/prod/core/core.js b/dist/prod/core/core.js
+index a9cb5825aeec4401ca9d1be81d397b059c0de4f3..223f776c8b2822ac07413ef43cf0a5eef34f5aa6 100644
+--- a/dist/prod/core/core.js
++++ b/dist/prod/core/core.js
+@@ -1,6 +1,6 @@
+ import { releaseFlightTeardown, handleAsync, clearStatus, parkLoadingWindow, notifyStatus, settlePendingSource, settleErroredDependents } from "./async.js";
+ 
+-import { STATUS_UNINITIALIZED, REACTIVE_LAZY, REACTIVE_NONE, defaultContext, CONFIG_TRANSPARENT, CONFIG_OWNED_WRITE, CONFIG_AUTO_DISPOSE, CONFIG_SYNC, CONFIG_NO_SNAPSHOT, CONFIG_IN_SNAPSHOT_SCOPE, NOT_PENDING, NO_SNAPSHOT, CONFIG_HAS_SNAPSHOT, CONFIG_HELD, REACTIVE_MANUAL_WRITE, REACTIVE_DIRTY, CONFIG_OVERRIDE, REACTIVE_DISPOSED, REACTIVE_CHECK, REACTIVE_IN_HEAP, REACTIVE_REASK, REACTIVE_SNAPSHOT_STALE, REACTIVE_LANE_DIRTY, CONFIG_GUESS, REACTIVE_RECOMPUTING_DEPS, EFFECT_RENDER, CONFIG_VERDICT, EFFECT_TRACKED, CONFIG_STAGED, STATUS_ERROR, STATUS_PENDING, REACTIVE_ZOMBIE, REACTIVE_MISSED_WAKE, REACTIVE_JOINED, REACTIVE_PROBED, REACTIVE_FRAME_READ, REACTIVE_STAGED_READ, REACTIVE_LANE_READ, REACTIVE_SCREEN_READ, REACTIVE_PROBE_UNANSWERED, CONFIG_CHILDREN_FORBIDDEN, CONFIG_PROMOTED, CONFIG_INPUTS_PUBLISHED, CONFIG_FRESH_READ, REACTIVE_IN_HEAP_HEIGHT, CONFIG_SLOT_NODE, EFFECT_USER } from "./constants.js";
++import { CONFIG_VERDICT_REDERIVE, STATUS_UNINITIALIZED, REACTIVE_LAZY, REACTIVE_NONE, defaultContext, CONFIG_TRANSPARENT, CONFIG_OWNED_WRITE, CONFIG_AUTO_DISPOSE, CONFIG_SYNC, CONFIG_NO_SNAPSHOT, CONFIG_IN_SNAPSHOT_SCOPE, NOT_PENDING, NO_SNAPSHOT, CONFIG_HAS_SNAPSHOT, CONFIG_HELD, REACTIVE_MANUAL_WRITE, REACTIVE_DIRTY, CONFIG_OVERRIDE, REACTIVE_DISPOSED, REACTIVE_CHECK, REACTIVE_IN_HEAP, REACTIVE_REASK, REACTIVE_SNAPSHOT_STALE, REACTIVE_LANE_DIRTY, CONFIG_GUESS, REACTIVE_RECOMPUTING_DEPS, EFFECT_RENDER, CONFIG_VERDICT, EFFECT_TRACKED, CONFIG_STAGED, STATUS_ERROR, STATUS_PENDING, REACTIVE_ZOMBIE, REACTIVE_MISSED_WAKE, REACTIVE_JOINED, REACTIVE_PROBED, REACTIVE_FRAME_READ, REACTIVE_STAGED_READ, REACTIVE_LANE_READ, REACTIVE_SCREEN_READ, REACTIVE_PROBE_UNANSWERED, CONFIG_CHILDREN_FORBIDDEN, CONFIG_PROMOTED, CONFIG_INPUTS_PUBLISHED, CONFIG_FRESH_READ, REACTIVE_IN_HEAP_HEIGHT, CONFIG_SLOT_NODE, EFFECT_USER } from "./constants.js";
+ 
+ import { NotReadyError } from "./error.js";
+ 
+@@ -197,6 +197,7 @@ function recompute(e, t = false) {
+     // live writes until the commit that disposes it, so every per-pass wipe
+     // — here, the finally below, updateIfNecessary — carries it (#3543).
+         e.R = REACTIVE_RECOMPUTING_DEPS | e.R & REACTIVE_ZOMBIE;
++        e.u &= ~CONFIG_VERDICT_REDERIVE;
+     e.Ne = clock;
+     // The pass's previous value: its staging, else the lane's value for a
+     // lane's node (lanes.ts), else the committed one.
+@@ -272,7 +273,7 @@ function recompute(e, t = false) {
+         f = (e.R & REACTIVE_JOINED) !== 0;
+         // A verdict reader is one for as long as it probes: a pass that entered
+         // no window (REACTIVE_PROBED) is an ordinary derivation again.
+-                if (!(e.R & REACTIVE_PROBED)) e.u &= ~CONFIG_VERDICT;
++                if (!(e.R & REACTIVE_PROBED)) e.u &= ~(CONFIG_VERDICT | CONFIG_VERDICT_REDERIVE);
+         // REACTIVE_DISPOSED survives too (#3621): the pass may have disposed its
+         // own owner (a memo calling its root's `dispose()`, a cleanup doing so
+         // #3601/#3606), and `disposeChildren` set the flag on this node
+diff --git a/dist/prod/core/scheduler.js b/dist/prod/core/scheduler.js
+index bb5daa91d20b3ad01e734e02abf22f846f7e43b0..c353612162a35fbabf20f9b1f7408b67809bfe2a 100644
+--- a/dist/prod/core/scheduler.js
++++ b/dist/prod/core/scheduler.js
+@@ -1,4 +1,4 @@
+-import { EFFECT_RENDER, EFFECT_USER, CONFIG_HELD, CONFIG_OVERRIDE, NOT_PENDING, STATUS_UNINITIALIZED, STATUS_PENDING, CONFIG_STAGED, REACTIVE_DISPOSED, REACTIVE_ZOMBIE, CONFIG_VERDICT, CONFIG_HAS_SNAPSHOT, REACTIVE_RECOMPUTING_DEPS, REACTIVE_MISSED_WAKE, CONFIG_IN_SNAPSHOT_SCOPE, REACTIVE_SNAPSHOT_STALE, REACTIVE_LANE_DIRTY, CONFIG_INPUTS_PUBLISHED, EFFECT_TRACKED, REACTIVE_MANUAL_WRITE, CONFIG_GUESS, REACTIVE_FRAME_READ, CONFIG_REDERIVE } from "./constants.js";
++import { CONFIG_VERDICT_REDERIVE, EFFECT_RENDER, EFFECT_USER, CONFIG_HELD, CONFIG_OVERRIDE, NOT_PENDING, STATUS_UNINITIALIZED, STATUS_PENDING, CONFIG_STAGED, REACTIVE_DISPOSED, REACTIVE_ZOMBIE, CONFIG_VERDICT, CONFIG_HAS_SNAPSHOT, REACTIVE_RECOMPUTING_DEPS, REACTIVE_MISSED_WAKE, CONFIG_IN_SNAPSHOT_SCOPE, REACTIVE_SNAPSHOT_STALE, REACTIVE_LANE_DIRTY, CONFIG_INPUTS_PUBLISHED, EFFECT_TRACKED, REACTIVE_MANUAL_WRITE, CONFIG_GUESS, REACTIVE_FRAME_READ, CONFIG_REDERIVE } from "./constants.js";
+ 
+ import { attrHooks } from "./attribution-hooks.js";
+ 
+@@ -504,7 +504,7 @@ class GlobalQueue {
+             // holder's verdict lane's work — before the lane seams, which reveal
+             // it (nothing commits this seam that could dispose it).
+                         const t = deferredZombies.splice(0).sort((e, n) => e.Le - n.Le);
+-            for (let e = 0; e < t.length; e++) if ((t[e].R & (REACTIVE_DISPOSED | REACTIVE_ZOMBIE)) === REACTIVE_ZOMBIE && t[e].u & CONFIG_VERDICT) recompute(t[e]);
++            for (let e = 0; e < t.length; e++) if ((t[e].R & (REACTIVE_DISPOSED | REACTIVE_ZOMBIE)) === REACTIVE_ZOMBIE && t[e].u & CONFIG_VERDICT_REDERIVE) recompute(t[e]);
+             // The unchanged passes' tails stay linked (A30, #3469): their inputs
+             // are held, and the committed frame still derives from them — no trim.
+                 } else {
+diff --git a/dist/prod/core/verdict.js b/dist/prod/core/verdict.js
+index bfefae4eb7733e779ec5d7d788bfd1efeb6e02f8..06ae62a3fb8a76790532ce9949d137c0b74104a5 100644
+--- a/dist/prod/core/verdict.js
++++ b/dist/prod/core/verdict.js
+@@ -1,4 +1,4 @@
+-import { CONFIG_VERDICT, REACTIVE_PROBED, CONFIG_INPUTS_PUBLISHED, CONFIG_HELD, REACTIVE_JOINED, REACTIVE_STAGED_READ, REACTIVE_LANE_READ, CONFIG_CHILDREN_FORBIDDEN, CONFIG_OVERRIDE, STATUS_PENDING, CONFIG_GUESS, NOT_PENDING, STATUS_UNINITIALIZED, EFFECT_RENDER, STATUS_ERROR, REACTIVE_PROBE_UNANSWERED } from "./constants.js";
++import { CONFIG_VERDICT, CONFIG_VERDICT_REDERIVE, REACTIVE_PROBED, CONFIG_INPUTS_PUBLISHED, CONFIG_HELD, REACTIVE_JOINED, REACTIVE_STAGED_READ, REACTIVE_LANE_READ, CONFIG_CHILDREN_FORBIDDEN, CONFIG_OVERRIDE, STATUS_PENDING, CONFIG_GUESS, NOT_PENDING, STATUS_UNINITIALIZED, EFFECT_RENDER, STATUS_ERROR, REACTIVE_PROBE_UNANSWERED } from "./constants.js";
+ 
+ import { context, setVerdict, verdict, tracking, pullComputed, markLateLinker, spectating, unflushedValue } from "./core.js";
+ 
+@@ -170,7 +170,7 @@ let probeFound = false;
+     let t = context;
+     if (t?.Et) t = t.ut;
+     if (t !== null) {
+-        t.u |= CONFIG_VERDICT;
++        t.u |= tracking ? CONFIG_VERDICT | CONFIG_VERDICT_REDERIVE : CONFIG_VERDICT;
+         t.R |= REACTIVE_PROBED;
+     }
+ }

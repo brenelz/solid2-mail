@@ -5,7 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  '@solidjs/signals@2.0.0-rc.14': 817d9165da0a8550b07338abf6d27d2b36fa93f3293a7b2d8f01c9d284b09c5b
+  '@solidjs/signals@2.0.0-rc.14':
+    hash: 817d9165da0a8550b07338abf6d27d2b36fa93f3293a7b2d8f01c9d284b09c5b
+    path: patches/@solidjs__signals@2.0.0-rc.14.patch
 
 importers:
 

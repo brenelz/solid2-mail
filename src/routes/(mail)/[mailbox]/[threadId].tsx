@@ -6,7 +6,7 @@ import { preloadThread } from "../../../lib/queries";
 
 export const route = defineFileRoute("/:mailbox/:threadId", {
   matchFilters: { mailbox: MAILBOX_IDS },
-  preload: ({ params, intent }) => preloadThread(params.threadId, intent),
+  preload: ({ params }) => preloadThread(params.threadId),
 });
 
 export default function ThreadPage(props: RouteProps<typeof route>) {

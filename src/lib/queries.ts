@@ -1,5 +1,4 @@
-import { query, type RoutePreloadFuncArgs } from "@solidjs/router";
-import { isServer } from "@solidjs/web";
+import { query } from "@solidjs/router";
 import * as server from "./server";
 import { currentUser, delay, isDelaysEnabled, labels, threads } from "./server";
 import type {
@@ -47,8 +46,8 @@ export const getThreads = query(async (mailbox: Mailbox): Promise<ThreadListItem
   return mailbox === "starred" ? threads.filter((t) => t.starred) : threads.filter((t) => t.mailbox === mailbox);
 }, "threads");
 
-// A thread loads in three parts, like the original: the summary arrives first (a hover preload fetches it),
-// then the latest message, then the earlier ones. The delays stagger them so each stage is visible.
+// A thread loads in three parts, like the original: the summary arrives first, then the latest message,
+// then the earlier ones. The delays stagger them so each stage is visible.
 
 export const getThreadSummary = query(async (id: string): Promise<ThreadSummary | undefined> => {
   "use server";
@@ -68,12 +67,10 @@ export const getEarlierMessages = query(async (id: string): Promise<Message[]> =
   return server.getEarlierMessages(id);
 }, "earlierMessages");
 
-/** Route preload for a thread. A link preload (hover, focus, touch) stops at the summary; message bodies
- *  load on the navigation itself, where they start together instead of after the header. */
-export function preloadThread(id: string, intent: RoutePreloadFuncArgs["intent"]) {
+/** Route preload for a thread. Link preloads (hover, focus, touch) fetch the message bodies too, so a
+ *  hovered link opens straight to the whole thread instead of flashing the message skeleton. */
+export function preloadThread(id: string) {
   void getThreadSummary(id);
-  // The server runs preloads with intent "preload" too, to collect an action's single-flight response.
-  if (intent === "preload" && !isServer) return;
   void getLatestMessage(id);
   void getEarlierMessages(id);
 }

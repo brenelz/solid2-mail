@@ -13,12 +13,12 @@ import type {
 
 // Server-only data layer. Static placeholder content for now — swap for a real database later.
 
-/** Demo toggle: delays are on unless this cookie is "0". Flipped from the demo toolbar. */
+/** Demo toggle: delays are off unless this cookie is "1". Flipped from the demo toolbar. */
 export const DELAYS_COOKIE = "stamp-delays";
 
 export function isDelaysEnabled() {
   const cookie = getRequestEvent()?.request.headers.get("cookie");
-  return parseCookieHeader(cookie)[DELAYS_COOKIE] !== "0";
+  return parseCookieHeader(cookie)[DELAYS_COOKIE] === "1";
 }
 
 /** Fake network/database latency so loading states are visible. Skipped when delays are toggled off. */

@@ -25,7 +25,7 @@ export const getLabels = query(async (): Promise<Label[]> => {
 /** Unread conversations per mailbox. */
 export const getMailboxCounts = query(async (): Promise<MailboxCounts> => {
   "use server";
-  await delay();
+  await delay(400);
   const unread = threads.filter((t) => !t.read);
   return {
     inbox: unread.filter((t) => t.mailbox === "inbox").length,
@@ -37,13 +37,12 @@ export const getMailboxCounts = query(async (): Promise<MailboxCounts> => {
 
 export const getCurrentUser = query(async (): Promise<User> => {
   "use server";
-  await delay();
   return currentUser;
 }, "currentUser");
 
 export const getThreads = query(async (mailbox: Mailbox): Promise<ThreadListItem[]> => {
   "use server";
-  await delay();
+  await delay(700);
   // Starred is a view across every location; the others are where a thread lives.
   return mailbox === "starred" ? threads.filter((t) => t.starred) : threads.filter((t) => t.mailbox === mailbox);
 }, "threads");
@@ -89,7 +88,7 @@ export const getDelaysEnabled = query(async (): Promise<boolean> => {
 export const searchThreads = query(async (q: string): Promise<ThreadListItem[]> => {
   "use server";
   const needle = q.trim().toLowerCase();
-  await delay();
+  await delay(500);
   if (!needle) return threads;
   return threads.filter((t) =>
     [t.subject, t.snippet, ...t.participants, ...t.labels.map((l) => l.name)].some((field) =>

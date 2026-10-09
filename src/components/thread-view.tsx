@@ -1,5 +1,5 @@
 import { Title } from "@solidjs/meta";
-import { useAction, useNavigate } from "@solidjs/router";
+import { useAction } from "@solidjs/router";
 import { createEffect, createMemo, createOptimistic, For, Loading, Show } from "solid-js";
 import { markThreadsRead, moveThreads, starThreads } from "../lib/mutations";
 import { getEarlierMessages, getLatestMessage, getThreadSummary } from "../lib/queries";
@@ -142,29 +142,23 @@ function MessageText(props: { paragraphs: string[] }) {
 
 /** Back, Archive / Move to inbox and Star for the open thread. */
 function ThreadToolbar(props: { thread: ThreadSummary; backHref: string }) {
-  const navigate = useNavigate();
   const move = useAction(moveThreads);
   const star = useAction(starThreads);
 
-  // Optimistic like the list rows: the star flips on submit and falls back to the server's value once saved.
+  // Optimistic like the list rows: star and archive flip on submit and fall back to the server's values once saved.
   const [starred, setStarred] = createOptimistic(() => props.thread.starred);
-  const [moving, setMoving] = createOptimistic(false);
+  const [mailbox, setMailbox] = createOptimistic(() => props.thread.mailbox);
   const isThisThread = (ids: string[]) => ids.includes(props.thread.id);
   // eslint-disable-next-line solid/reactivity -- action hooks are event-like: read the thread id at submit time
   starThreads.onSubmit((ids, value) => {
     if (isThisThread(ids)) setStarred(value);
   });
   // eslint-disable-next-line solid/reactivity -- action hooks are event-like: read the thread id at submit time
-  moveThreads.onSubmit((ids) => {
-    if (isThisThread(ids)) setMoving(true);
+  moveThreads.onSubmit((ids, to) => {
+    if (isThisThread(ids)) setMailbox(to);
   });
 
-  const archived = () => props.thread.mailbox === "archive";
-  // Like the original: once moved, the thread no longer belongs where you were reading it, so go back to the list.
-  const toggleArchived = async () => {
-    const result = await move([props.thread.id], archived() ? "inbox" : "archive");
-    if (result?.ok) navigate(props.backHref);
-  };
+  const archived = () => mailbox() === "archive";
 
   return (
     <div class="border-divider/70 flex h-14 shrink-0 items-center gap-1 border-b bg-black px-3 sm:px-6">
@@ -179,11 +173,9 @@ function ThreadToolbar(props: { thread: ThreadSummary; backHref: string }) {
       {/* Sent threads have nowhere to be archived from (same rule as the list rows). */}
       <Show when={props.thread.mailbox !== "sent"}>
         <button
-          aria-busy={moving() ? "true" : undefined}
           aria-label={archived() ? "Move to inbox" : "Archive"}
-          class={[iconButtonClass, "disabled:cursor-default disabled:opacity-40"]}
-          disabled={moving()}
-          onClick={() => void toggleArchived()}
+          class={iconButtonClass}
+          onClick={() => void move([props.thread.id], archived() ? "inbox" : "archive")}
           title={archived() ? "Move to inbox" : "Archive"}
           type="button"
         >

@@ -3,11 +3,13 @@ import { nitro } from "nitro/vite";
 import solid from "@solidjs/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
+import { useBuild } from "./use-build";
 
 export default defineConfig({
   // Nitro takes the dev port from here (it would otherwise default to 3000); keep Vite's usual 5173.
   server: { port: 5173 },
   plugins: [
+    useBuild(),
     solid({
       start: {
         middleware: "./src/middleware.ts",

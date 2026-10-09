@@ -7,7 +7,7 @@ import type { Label, Mailbox, MailboxCounts, Thread, ThreadListItem, User } from
 
 export const getLabels = query(async (): Promise<Label[]> => {
   "use server";
-  await delay();
+  "use build";
   return labels;
 }, "labels");
 

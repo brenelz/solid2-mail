@@ -68,7 +68,6 @@ export function MailSidebarContent(props: { drawer?: boolean }) {
                 <a
                   class={linkClass}
                   href={`/${mailbox.id}`}
-                  // @ts-expect-error @solidjs/web rc.14 types the anchor preload attribute without the router's "viewport".
                   preload="viewport"
                 >
                   <Icon class="size-5 shrink-0" />

@@ -1,5 +1,6 @@
 import type { ParentProps } from "solid-js";
 import { HydrationScript } from "@solidjs/web";
+import geistLatin from "@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url";
 
 export default function Document(props: ParentProps) {
   return (
@@ -9,12 +10,7 @@ export default function Document(props: ParentProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#000000" />
         <link rel="icon" href="/favicon.ico" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap"
-        />
+        <link rel="preload" href={geistLatin} as="font" type="font/woff2" crossorigin="" />
         <meta
           name="description"
           content="Stamp, a Gmail-style mail client demo rebuilt with SolidJS 2 — a port of aurorascharff/next16-mail."

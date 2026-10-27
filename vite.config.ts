@@ -14,6 +14,7 @@ export default defineConfig({
       start: {
         middleware: "./src/middleware.ts",
         node: true,
+        css: { inline: true },
       },
       ssr: true,
       diagnostics: true,

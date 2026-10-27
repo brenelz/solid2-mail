@@ -2,6 +2,16 @@
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";
 
+/* Arial sized to Geist's metrics (next/font's values), so the swap keeps layout and LCP. */
+@font-face {
+  font-family: "Geist Fallback";
+  src: local("Arial");
+  ascent-override: 94.56%;
+  descent-override: 27.76%;
+  line-gap-override: 0%;
+  size-adjust: 106.28%;
+}
+
 /* Dark theme only for now — tokens are the reference app's dark values. */
 @theme {
   --color-gray: #9ca3af;
@@ -17,7 +27,7 @@
   --color-accent-hover: #1b50ff;
   --color-danger: #e54848;
 
-  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist Variable", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
 
   --tracking-tight: -0.02em;
